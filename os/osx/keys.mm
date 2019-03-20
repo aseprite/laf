@@ -409,13 +409,21 @@ CFStringRef get_unicode_from_key_code(const UInt16 keyCode,
   UniChar output[4];
   UniCharCount length;
 
+  // As UCKeyTranslate doesn't care about the Caps Lock flag,
+  // translate it into Shift
+  NSEventModifierFlags modifierFlagsHacked = modifierFlags;
+  if (modifierFlagsHacked & NSEventModifierFlagCapsLock) {
+    modifierFlagsHacked ^=
+     (NSEventModifierFlagCapsLock ^ NSEventModifierFlagShift);
+  }
+
   // Reference here:
   // https://developer.apple.com/reference/coreservices/1390584-uckeytranslate?language=objc
   UCKeyTranslate(
     keyLayout,
     keyCode,
     kUCKeyActionDown,
-    ((modifierFlags >> 16) & 0xFF),
+    ((modifierFlagsHacked >> 16) & 0xFF),
     LMGetKbdType(),
     (deadKeyState ? 0: kUCKeyTranslateNoDeadKeysMask),
     &deadKeyStateWrap,
