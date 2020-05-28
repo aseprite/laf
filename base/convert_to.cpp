@@ -79,4 +79,11 @@ template<> std::string convert_to(const Sha1& from)
   return res;
 }
 
+template<> std::string convert_to_4_digits_string(const int& from)
+{
+  char buf[32];
+  std::sprintf(buf, "%04d", from);
+  return buf;
+}
+
 } // namespace base

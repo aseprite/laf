@@ -34,6 +34,13 @@ namespace base {
   template<> Sha1 convert_to(const std::string& from);
   template<> std::string convert_to(const Sha1& from);
 
+  template<typename To, typename From>
+  To convert_to_4_digits_string(const From& from) {
+    static_assert(false && sizeof(To), "Invalid conversion");
+  }
+
+  template<> std::string convert_to_4_digits_string(const int& from);
+
 }
 
 #endif
