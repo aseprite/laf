@@ -20,6 +20,7 @@
 #include "base/version.h"
 
 #include <iostream>
+#include <algorithm>
 
 #define WINTAB_TRACE(...)
 
@@ -70,7 +71,8 @@ HCTX WintabAPI::open(HWND hwnd, bool moveMouse)
   {
     UINT nchars = WTInfo(WTI_INTERFACE, IFC_WINTABID, nullptr);
     if (nchars > 0 && nchars < 1024) {
-      std::vector<WCHAR> buf(nchars+1, 0);
+      // Some buggy wintab implementations may not report the right string size in the WTInfo call above (eg.: the Genius EasyPen i405X wintab). When this happens, the WTInfo call for getting the tablet id will get only a part of the string, therefore without the null terminating character. On windows this will lead to a failure when msvc free implementation tries to dealocate the storage for the std::vector used to hold the string. This may just crash instantly, or cause a heap corruption that will lead to a crash latter. A quick workaround to this kind of wintab misinformation is to oversize the buffer to guarantee that for the most common string lenghts it will be enough.
+      std::vector<WCHAR> buf(std::min(128, nchars+1), 0);
       WTInfo(WTI_INTERFACE, IFC_WINTABID, &buf[0]);
       LOG("PEN: Wintab ID \"%s\"\n", base::to_utf8(&buf[0]).c_str());
     }
