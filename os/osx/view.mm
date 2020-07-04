@@ -50,8 +50,9 @@ gfx::Point get_local_mouse_pos(NSView* view, NSEvent* event)
     scale = [(OSXWindow*)[view window] scale];
 
   // "os" layer coordinates expect (X,Y) origin at the top-left corner.
-  return gfx::Point(point.x / scale,
-                    (view.bounds.size.height - point.y) / scale);
+  float displayScale = view.window.backingScaleFactor;
+  return gfx::Point(point.x / scale * displayScale,
+                    (view.bounds.size.height - point.y) / scale * displayScale);
 }
 
 Event::MouseButton get_mouse_buttons(NSEvent* event)
@@ -189,11 +190,13 @@ using namespace os;
 - (void)drawRect:(NSRect)dirtyRect
 {
   [super drawRect:dirtyRect];
-  if (m_impl)
-    m_impl->onDrawRect(gfx::Rect(dirtyRect.origin.x,
-                                 dirtyRect.origin.y,
-                                 dirtyRect.size.width,
-                                 dirtyRect.size.height));
+  if (m_impl) {
+    float displayScale = self.window.backingScaleFactor;
+    m_impl->onDrawRect(gfx::Rect(dirtyRect.origin.x * displayScale,
+                                 dirtyRect.origin.y * displayScale,
+                                 dirtyRect.size.width * displayScale,
+                                 dirtyRect.size.height * displayScale));
+  }
 }
 
 - (void)keyDown:(NSEvent*)event
@@ -462,8 +465,9 @@ using namespace os;
 
   // Call OSXWindowImpl::onResize handler
   if (m_impl) {
-    m_impl->onResize(gfx::Size(newSize.width,
-                               newSize.height));
+    float displayScale = self.window.backingScaleFactor;
+    m_impl->onResize(gfx::Size(newSize.width * displayScale,
+                               newSize.height * displayScale));
   }
 }
 

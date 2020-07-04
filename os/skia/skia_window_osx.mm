@@ -96,6 +96,10 @@ public:
     [m_window setScale:scale];
   }
 
+  float displayScale() const {
+    return m_window.backingScaleFactor;
+  }
+
   void setVisible(bool visible) {
     if (visible) {
       // Make the first OSXWindow as the main one.
@@ -138,12 +142,13 @@ public:
         @autoreleasepool {
           gfx::Rect bounds = rgn.bounds(); // TODO use only the region?
           int scale = this->scale();
+          float displayScale = this->displayScale();
           NSView* view = m_window.contentView;
           [view setNeedsDisplayInRect:
-                  NSMakeRect(bounds.x*scale,
-                             view.frame.size.height - (bounds.y+bounds.h)*scale,
-                             bounds.w*scale,
-                             bounds.h*scale)];
+                  NSMakeRect(bounds.x*scale/displayScale,
+                             view.frame.size.height - (bounds.y+bounds.h)*scale/displayScale,
+                             bounds.w*scale/displayScale,
+                             bounds.h*scale/displayScale)];
 
 #if 0     // Do not refresh immediately. Note: This might be required
           // for debugging purposes in some scenarios, but now this is
@@ -461,6 +466,7 @@ private:
 
     NSRect viewBounds = m_window.contentView.bounds;
     int scale = this->scale();
+    float displayScale = this->displayScale();
 
     SkiaSurface* surface = static_cast<SkiaSurface*>(m_display->getSurface());
     const SkBitmap& origBitmap = surface->bitmap();
@@ -470,7 +476,7 @@ private:
       // Create a subset to draw on the view
       if (!origBitmap.extractSubset(
             &bitmap, SkIRect::MakeXYWH(rect.x,
-                                       (viewBounds.size.height-(rect.y+rect.h)),
+                                       (viewBounds.size.height*displayScale-(rect.y+rect.h)),
                                        rect.w,
                                        rect.h)))
         return;
@@ -487,7 +493,7 @@ private:
       SkCanvas canvas(bitmap);
       canvas.drawBitmapRect(origBitmap,
                             SkIRect::MakeXYWH(rect.x/scale,
-                                              (viewBounds.size.height-(rect.y+rect.h))/scale,
+                                              (viewBounds.size.height*displayScale-(rect.y+rect.h))/scale,
                                               rect.w/scale,
                                               rect.h/scale),
                             SkRect::MakeXYWH(0, 0, rect.w, rect.h),
@@ -500,9 +506,9 @@ private:
       CGColorSpaceRef colorSpace = CGDisplayCopyColorSpace(CGMainDisplayID());
       CGImageRef img = SkCreateCGImageRefWithColorspace(bitmap, colorSpace);
       if (img) {
-        CGRect r = CGRectMake(viewBounds.origin.x+rect.x,
-                              viewBounds.origin.y+rect.y,
-                              rect.w, rect.h);
+        CGRect r = CGRectMake(viewBounds.origin.x+rect.x/displayScale,
+                              viewBounds.origin.y+rect.y/displayScale,
+                              rect.w/displayScale, rect.h/displayScale);
 
         CGContextSaveGState(cg);
         CGContextSetInterpolationQuality(cg, kCGInterpolationNone);

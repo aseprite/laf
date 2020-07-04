@@ -83,28 +83,32 @@ using namespace os;
 
   if (m_impl) {
     NSRect bounds = [[self contentView] bounds];
-    m_impl->onResize(gfx::Size(bounds.size.width,
-                               bounds.size.height));
+    float displayScale = self.backingScaleFactor;
+    m_impl->onResize(gfx::Size(bounds.size.width * displayScale,
+                               bounds.size.height * displayScale));
   }
 }
 
 - (gfx::Size)clientSize
 {
-  return gfx::Size([[self contentView] frame].size.width,
-                   [[self contentView] frame].size.height);
+  float displayScale = self.backingScaleFactor;
+  return gfx::Size([[self contentView] frame].size.width * displayScale,
+                   [[self contentView] frame].size.height * displayScale);
 }
 
 - (gfx::Size)restoredSize
 {
-  return [self clientSize];
+  return gfx::Size([[self contentView] frame].size.width,
+                   [[self contentView] frame].size.height);
 }
 
 - (void)setMousePosition:(const gfx::Point&)position
 {
    NSView* view = self.contentView;
+   float displayScale = self.backingScaleFactor;
    NSPoint pt = NSMakePoint(
-     position.x*m_scale,
-     view.frame.size.height - position.y*m_scale);
+     position.x*m_scale/displayScale,
+     view.frame.size.height - position.y*m_scale/displayScale);
 
    pt = [view convertPoint:pt toView:view];
    pt = [view convertPoint:pt toView:nil];
@@ -204,6 +208,10 @@ using namespace os;
     if (!bmp)
       return NO;
 
+    float displayScale = self.backingScaleFactor;
+    NSSize size = NSMakeSize(w/displayScale, h/displayScale);
+    [bmp setSize:size];
+
     uint32_t* dst = (uint32_t*)[bmp bitmapData];
     for (int y=0; y<h; ++y) {
       const uint32_t* src = (const uint32_t*)surface->getData(0, y/scale);
@@ -216,7 +224,7 @@ using namespace os;
       }
     }
 
-    NSImage* img = [[NSImage alloc] initWithSize:NSMakeSize(w, h)];
+    NSImage* img = [[NSImage alloc] initWithSize:size];
     if (!img)
       return NO;
 
@@ -224,8 +232,8 @@ using namespace os;
 
     NSCursor* nsCursor =
       [[NSCursor alloc] initWithImage:img
-                              hotSpot:NSMakePoint(scale*focus.x + scale/2,
-                                                  scale*focus.y + scale/2)];
+                              hotSpot:NSMakePoint((scale*focus.x + scale/2)/displayScale,
+                                                  (scale*focus.y + scale/2)/displayScale)];
     if (!nsCursor)
       return NO;
 
