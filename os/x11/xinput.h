@@ -159,7 +159,7 @@ public:
 
     ASSERT(XSelectExtensionEvent);
     XSelectExtensionEvent(display, window,
-                          &m_eventClasses[0],
+                          m_eventClasses.data(),
                           int(m_eventClasses.size()));
   }
 
