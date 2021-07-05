@@ -946,7 +946,7 @@ void WindowWin::onTabletAPIChange()
 
 bool WindowWin::setCursor(HCURSOR hcursor, bool custom)
 {
-  SetCursor(hcursor);
+  SetClassLongPtr(m_hwnd, GCLP_HCURSOR, (LONG_PTR)hcursor);
   if (m_hcursor && m_customHcursor)
     DestroyIcon(m_hcursor);
   m_hcursor = hcursor;
