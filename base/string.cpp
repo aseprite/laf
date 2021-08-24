@@ -14,10 +14,7 @@
 
 #include <cctype>
 #include <vector>
-
-#ifdef LAF_WINDOWS
-  #include <windows.h>
-#endif
+#include <codecvt>
 
 namespace base {
 
@@ -68,130 +65,15 @@ std::string string_to_upper(const std::string& original)
   return to_utf8(result);
 }
 
-#ifdef LAF_WINDOWS
-
-std::string to_utf8(const wchar_t* src, const int n)
+std::string to_utf8(const wchar_t* src)
 {
-  int required_size =
-    ::WideCharToMultiByte(CP_UTF8, 0,
-      src, (int)n,
-      NULL, 0, NULL, NULL);
-
-  if (required_size == 0)
-    return std::string();
-
-  std::vector<char> buf(++required_size);
-
-  ::WideCharToMultiByte(CP_UTF8, 0,
-    src, (int)n,
-    &buf[0], required_size,
-    NULL, NULL);
-
-  return std::string(&buf[0]);
+  return std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(src);
 }
 
 std::wstring from_utf8(const std::string& src)
 {
-  int required_size =
-    MultiByteToWideChar(CP_UTF8, 0,
-      src.c_str(), (int)src.size(),
-      NULL, 0);
-
-  if (required_size == 0)
-    return std::wstring();
-
-  std::vector<wchar_t> buf(++required_size);
-
-  ::MultiByteToWideChar(CP_UTF8, 0,
-    src.c_str(), (int)src.size(),
-    &buf[0], required_size);
-
-  return std::wstring(&buf[0]);
+  return std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(src);
 }
-
-#else
-
-// Based on Allegro Unicode code (allegro/src/unicode.c)
-static std::size_t insert_utf8_char(std::string* result, wchar_t chr)
-{
-  int size, bits, b, i;
-
-  if (chr < 128) {
-    if (result)
-      result->push_back(chr);
-    return 1;
-  }
-
-  bits = 7;
-  while (chr >= (1<<bits))
-    bits++;
-
-  size = 2;
-  b = 11;
-
-  while (b < bits) {
-    size++;
-    b += 5;
-  }
-
-  if (result) {
-    b -= (7-size);
-    int firstbyte = chr>>b;
-    for (i=0; i<size; i++)
-      firstbyte |= (0x80>>i);
-
-    result->push_back(firstbyte);
-
-    for (i=1; i<size; i++) {
-      b -= 6;
-      result->push_back(0x80 | ((chr>>b)&0x3F));
-    }
-  }
-
-  return size;
-}
-
-std::string to_utf8(const wchar_t* src, const int n)
-{
-  // Get required size to reserve a string so string::push_back()
-  // doesn't need to reallocate its data.
-  std::size_t required_size = 0;
-  auto p = src;
-  for (int i=0; i<n; ++i, ++p)
-    required_size += insert_utf8_char(nullptr, *p);
-  if (!required_size)
-    return "";
-
-  std::string result;
-  result.reserve(++required_size);
-  p = src;
-  for (int i=0; i<n; ++i, ++p)
-    insert_utf8_char(&result, *p);
-  return result;
-}
-
-std::wstring from_utf8(const std::string& src)
-{
-  int required_size = utf8_length(src);
-  std::vector<wchar_t> buf(++required_size);
-  std::vector<wchar_t>::iterator buf_it = buf.begin();
-#ifdef _DEBUG
-  std::vector<wchar_t>::iterator buf_end = buf.end();
-#endif
-  utf8_const_iterator it(src.begin());
-  utf8_const_iterator end(src.end());
-
-  while (it != end) {
-    ASSERT(buf_it != buf_end);
-    *buf_it = *it;
-    ++buf_it;
-    ++it;
-  }
-
-  return std::wstring(&buf[0]);
-}
-
-#endif
 
 int utf8_length(const std::string& utf8string)
 {

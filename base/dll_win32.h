@@ -48,7 +48,7 @@ std::string get_dll_filename(dll lib)
   std::vector<wchar_t> buf(MAX_PATH);
   if (get_dll_filename_wchar(lib, buf) &&
       buf.size() > 1)           // One char for the null char
-    return to_utf8(&buf[0], (int)buf.size()-1);
+    return to_utf8(&buf[0]);
   else
     return std::string();
 }

@@ -553,7 +553,7 @@ std::string WindowWin::title() const
   ++n;
   std::vector<wchar_t> buf(n, 0);
   GetWindowText(m_hwnd, &buf[0], n);
-  return base::to_utf8(&buf[0], n);
+  return base::to_utf8(&buf[0]);
 }
 
 void WindowWin::setTitle(const std::string& title)
