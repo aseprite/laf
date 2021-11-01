@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   if (!app.init())
     return 1;
 #elif LAF_LINUX
-  os::X11 x11;
+  os::X11 x11();
 #endif
   return app_main(argc, argv);
 }
