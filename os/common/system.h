@@ -37,7 +37,10 @@ namespace os {
 class CommonSystem : public System {
 public:
   CommonSystem() { }
-  ~CommonSystem() { set_instance(nullptr); }
+  ~CommonSystem() {
+    eventQueue()->clearEvents();
+    set_instance(nullptr);
+  }
 
   void setAppName(const std::string& appName) override { }
   void setAppMode(AppMode appMode) override { }

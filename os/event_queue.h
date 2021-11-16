@@ -23,6 +23,7 @@ namespace os {
     // limit the time of wait for the next event.
     virtual void getEvent(Event& ev, double timeout = kWithoutTimeout) = 0;
     virtual void queueEvent(const Event& ev) = 0;
+    virtual void clearEvents() = 0;
 
     // Deprecated old method. We should remove this line after some
     // releases. It's here to avoid calling getEvent(Event&, double)

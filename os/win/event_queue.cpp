@@ -24,6 +24,11 @@ void EventQueueWin::queueEvent(const Event& ev)
   m_events.push(ev);
 }
 
+void EventQueueWin::clearEvents()
+{
+  m_events.clear();
+}
+
 void EventQueueWin::getEvent(Event& ev, double timeout)
 {
   base::tick_t untilTick = base::current_tick() + timeout*1000;
