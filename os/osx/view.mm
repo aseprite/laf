@@ -499,7 +499,12 @@ using namespace os;
   if (self.window)
     scale = [(WindowOSXObjc*)self.window scale];
 
-  if (event.hasPreciseScrollingDeltas) {
+  if (event.hasPreciseScrollingDeltas &&
+      // The following two conditions are the only way to determine if a 'scrollingDeltas'
+      // is coming from a mouse or touchpad device.
+      // Some mice, like Logitech MX Master, return the scroll wheel data as precisseScrollingDelta
+      // instead the regular scrollDelta, resulting in unexpected behovior.
+      (event.momentumPhase != NSEventPhaseNone || event.phase != NSEventPhaseNone)) {
     ev.setPointerType(os::PointerType::Touchpad);
     // TODO we shouldn't change the sign
     ev.setWheelDelta(gfx::Point(-event.scrollingDeltaX / scale,
