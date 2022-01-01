@@ -25,9 +25,10 @@ namespace base {
 
   size_t file_size(const std::string& path);
 
-  void move_file(const std::string& src, const std::string& dst);
-  void copy_file(const std::string& src, const std::string& dst, bool overwrite);
-  void delete_file(const std::string& path);
+  bool move_file(const std::string& src, const std::string& dst);
+  bool copy_file(const std::string& src, const std::string& dst, bool overwrite);
+  // TODO: Change bool to enum Result?
+  bool delete_file(const std::string& path);
 
   bool has_readonly_attr(const std::string& path);
   void remove_readonly_attr(const std::string& path);
