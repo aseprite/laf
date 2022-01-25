@@ -165,6 +165,15 @@ void ProgramOptions::parse(int argc, const char* argv[])
   }
 }
 
+void ProgramOptions::sortedParse(int argc, const char* argv[])
+{
+  parse(argc, argv);
+  std::stable_partition(
+    m_values.begin(), m_values.end(), [](const Value& value) {
+      return value.option() != nullptr;
+    });
+}
+
 void ProgramOptions::reset()
 {
   m_values.clear();

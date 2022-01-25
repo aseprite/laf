@@ -96,6 +96,10 @@ namespace base {
     // Detects which options where specified in the command line.
     void parse(int argc, const char* argv[]);
 
+    // Like parse(...) but all values(e.g filenames) without related
+    // options are pushed to the end of list
+    void sortedParse(int argc, const char* argv[]);
+
     // Reset all option values/flags.
     void reset();
 
