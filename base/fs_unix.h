@@ -25,6 +25,7 @@
 
 #include "base/paths.h"
 #include "base/time.h"
+#include "base/file_handle.h"
 
 #define MAXPATHLEN 1024
 
@@ -57,25 +58,46 @@ size_t file_size(const std::string& path)
   return (stat(path.c_str(), &sts) == 0) ? sts.st_size: 0;
 }
 
-void move_file(const std::string& src, const std::string& dst)
+bool move_file(const std::string& src, const std::string& dst)
 {
-  int result = std::rename(src.c_str(), dst.c_str());
-  if (result != 0)
-    // TODO add errno into the exception
-    throw std::runtime_error("Error moving file");
+  return std::rename(src.c_str(), dst.c_str()) == 0;
 }
 
-void copy_file(const std::string& src, const std::string& dst, bool overwrite)
+// Don't secure for interrumptions, write in a temp?
+bool copy_file(const std::string& src, const std::string& dst, bool overwrite)
 {
-  throw std::runtime_error("Error copying file: unimplemented");
+  if(compare_filenames(src, dst) == 0) // Those are same?
+    return false;
+
+  if(is_file(dst) && !overwrite) // If dst exists, we need overwriting
+    return false;
+
+  auto src_file = open_file(src, "rb"), dst_file = open_file(dst, "wb");
+  if(!src_file || !dst_file) // both exists?
+    return false;
+
+  // Getting optimal block size for I/O
+  struct stat s_stat;
+  if(fstat(fileno(src_file.get()), &s_stat) != 0)
+    return false;
+
+  std::vector<char> block(s_stat.st_blksize);
+  while(true) {
+    size_t in = fread(&block[0], 1, block.size(), src_file.get());
+    
+    if(in <= 0)
+      break;
+
+    if(fwrite(block.data(), 1, in, dst_file.get()) != in)
+      return false;
+  }
+
+  return true;
 }
 
-void delete_file(const std::string& path)
+bool delete_file(const std::string& path)
 {
-  int result = unlink(path.c_str());
-  if (result != 0)
-    // TODO add errno into the exception
-    throw std::runtime_error("Error deleting file");
+  return unlink(path.c_str()) == 0;
 }
 
 bool has_readonly_attr(const std::string& path)
