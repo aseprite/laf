@@ -1,5 +1,5 @@
 // LAF Gfx Library
-// Copyright (C) 2019-2021  Igara Studio S.A.
+// Copyright (C) 2019-2022  Igara Studio S.A.
 // Copyright (C) 2001-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -8,6 +8,8 @@
 #ifndef GFX_RECT_H_INCLUDED
 #define GFX_RECT_H_INCLUDED
 #pragma once
+
+#include <cmath>
 
 namespace gfx {
 
@@ -207,6 +209,28 @@ public:
     y += br.top();
     w -= br.left() + br.right();
     h -= br.top() + br.bottom();
+    return *this;
+  }
+
+  // This 'floor' function is useful to adjust
+  // x, y float coordinates to the 'left most
+  // near integer' for x, and 'top most near
+  // integer' for y (instead of rounding towards 0).
+  // This function was included to solve issue
+  // aseprite/aseprite#2891
+  //
+  // Example of use:
+  // gfx::RectF boundsF(-0.25, -0.75, 1, 2);
+  // gfx::Rect bounds = boundsF.floor();
+  // bounds = (-1, -1, 1, 2)
+  //
+  // When 'floor' is not used:
+  // gfx::RectF boundsF(-0.25, -0.75, 1, 2);
+  // gfx::Rect bounds = boundsF;
+  // bounds = (0, 0, 1, 2)
+  RectT& floor() {
+    x = std::floor(x);
+    y = std::floor(y);
     return *this;
   }
 
