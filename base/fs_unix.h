@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2021 Igara Studio S.A.
+// Copyright (c) 2021-2022 Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -110,13 +110,15 @@ Time get_modification_time(const std::string& path)
     t.tm_hour, t.tm_min, t.tm_sec);
 }
 
-void remove_directory(const std::string& path)
+bool remove_directory(const std::string& path, const bool withRuntimeError)
 {
   int result = rmdir(path.c_str());
-  if (result != 0) {
+  if (result != 0 && withRuntimeError) {
     // TODO add errno into the exception
     throw std::runtime_error("Error removing directory");
+    return true;
   }
+  return result != 0;
 }
 
 std::string get_current_path()

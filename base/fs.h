@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2020-2021 Igara Studio S.A.
+// Copyright (c) 2020-2022 Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -36,7 +36,7 @@ namespace base {
 
   void make_directory(const std::string& path);
   void make_all_directories(const std::string& path);
-  void remove_directory(const std::string& path);
+  bool remove_directory(const std::string& path, const bool withRuntimeError = true);
 
   std::string get_current_path();
   std::string get_app_path();

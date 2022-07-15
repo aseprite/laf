@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2020 Igara Studio S.A.
+// Copyright (c) 2020-2022 Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -107,11 +107,14 @@ void make_directory(const std::string& path)
     throw Win32Exception("Error creating directory");
 }
 
-void remove_directory(const std::string& path)
+bool remove_directory(const std::string& path, const bool withRuntimeError)
 {
   BOOL result = ::RemoveDirectory(from_utf8(path).c_str());
-  if (result == 0)
+  if (result == 0 && withRuntimeError) {}
     throw Win32Exception("Error removing directory");
+    return true;
+  }
+  return result == 0;
 }
 
 std::string get_current_path()
