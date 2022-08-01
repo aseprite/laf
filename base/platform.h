@@ -31,6 +31,8 @@ struct Platform {
     x86,                        // Windows 32-bit, Linux 32-bit
     x64,                        // Windows 64-bit, Mac Intel
     arm64,                      // Mac Apple Silicon (M1, M1 Pro), Raspberry Pi?
+    powerpc32,                  // PowerPC
+    powerpc64,                  // POWER ISA
   };
 
   static constexpr OS os =
@@ -48,13 +50,17 @@ struct Platform {
     Arch::arm64
 #elif defined(__x86_64__) || defined(_WIN64)
     Arch::x64
+#elif defined(__powerpc64__) || defined(_ARCH_PPC64)
+    Arch::powerpc64
+#elif defined(__powerpc__) || defined(_ARCH_PPC)
+    Arch::powerpc32
 #else
     Arch::x86
 #endif
     ;
 
-  static_assert((arch == Arch::x86 && sizeof(void*) == 4) ||
-                ((arch == Arch::x64 ||
+  static_assert(((arch == Arch::x86 || arch == Arch::powerpc32) && sizeof(void*) == 4) ||
+                ((arch == Arch::x64 || arch == Arch::powerpc64 ||
                   arch == Arch::arm64) && sizeof(void*) == 8),
                 "Invalid identification of CPU architecture");
 
