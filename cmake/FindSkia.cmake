@@ -28,13 +28,8 @@ endif()
 
 # Skia library
 find_library(SKIA_LIBRARY skia PATH "${SKIA_LIBRARY_DIR}")
-if(WIN32)
-  find_library(SKIA_OPENGL_LIBRARY opengl32)
-elseif(APPLE)
-  find_library(SKIA_OPENGL_LIBRARY OpenGL NAMES GL)
-else()
-  find_library(SKIA_OPENGL_LIBRARY opengl NAMES GL)
-endif()
+find_package(OpenGL REQUIRED)
+set(SKIA_OPENGL_LIBRARY OpenGL::GL)
 
 # SkShaper module + freetype + harfbuzz + zlib
 find_library(SKSHAPER_LIBRARY skshaper PATH "${SKIA_LIBRARY_DIR}")
