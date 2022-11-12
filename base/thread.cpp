@@ -55,8 +55,12 @@ thread::thread()
 
 thread::~thread()
 {
-  if (joinable())
+  if (joinable()) {
+#if LAF_WINDOWS
+    ::CloseHandle(m_native_handle);
+#endif  
     detach();
+  }
 }
 
 bool thread::joinable() const
@@ -69,6 +73,7 @@ void thread::join()
   if (joinable()) {
 #if LAF_WINDOWS
     ::WaitForSingleObject(m_native_handle, INFINITE);
+    ::CloseHandle(m_native_handle);
 #else
     ::pthread_join((pthread_t)m_native_handle, NULL);
 #endif
@@ -79,12 +84,7 @@ void thread::join()
 void thread::detach()
 {
   if (joinable()) {
-#if LAF_WINDOWS
-    ::CloseHandle(m_native_handle);
-    m_native_handle = (native_handle_type)0;
-#else
-    ::pthread_detach((pthread_t)m_native_handle);
-#endif
+    m_native_handle = (native_handle_type)NULL;
   }
 }
 
