@@ -11,6 +11,8 @@
 #include <vector>
 #include <string>
 
+#include "base/ints.h"
+
 extern "C" struct SHA1Context;
 
 namespace base {

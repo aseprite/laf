@@ -9,6 +9,7 @@
 #pragma once
 
 #include "base/buffer.h"
+#include "base/ints.h"
 
 #include <cstdio>
 #include <string>
