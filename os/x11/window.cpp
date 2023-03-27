@@ -673,6 +673,7 @@ void WindowX11::setFrame(const gfx::Rect& bounds)
     m_window,
     rc.x, rc.y,
     rc.w, rc.h);
+  XFlush(m_display);
 }
 
 gfx::Rect WindowX11::contentRect() const
