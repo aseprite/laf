@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2021  Igara Studio S.A.
+// Copyright (C) 2018-2023  Igara Studio S.A.
 // Copyright (C) 2015-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -41,6 +41,7 @@ int g_pressedKeys[kKeyScancodes];
 bool g_translateDeadKeys = false;
 UInt32 g_lastDeadKeyState = 0;
 NSCursor* g_emptyNsCursor = nil;
+Event::MouseButton g_lastMouseButton = Event::NoneButton;
 
 gfx::Point get_local_mouse_pos(NSView* view, NSEvent* event)
 {
@@ -441,8 +442,13 @@ using namespace os;
 - (void)handleMouseDown:(NSEvent*)event
 {
   Event ev;
-  ev.setType(event.clickCount == 2 ? Event::MouseDoubleClick:
-                                     Event::MouseDown);
+  if (event.clickCount == 2 &&
+      get_mouse_buttons(event) == g_lastMouseButton)
+    ev.setType(Event::MouseDoubleClick);
+  else
+    ev.setType(Event::MouseDown);
+
+  g_lastMouseButton = get_mouse_buttons(event);
   ev.setPosition(get_local_mouse_pos(self, event));
   ev.setButton(get_mouse_buttons(event));
   ev.setModifiers(get_modifiers_from_nsevent(event));
