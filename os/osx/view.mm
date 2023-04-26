@@ -535,6 +535,8 @@ using namespace os;
     // TODO we shouldn't change the sign
     ev.setWheelDelta(gfx::Point(-event.scrollingDeltaX / scale,
                                 -event.scrollingDeltaY / scale));
+    ev.setWheelDeltaF(gfx::PointF(-event.scrollingDeltaX / scale,
+                                  -event.scrollingDeltaY / scale));
     ev.setPreciseWheel(true);
   }
   else {
@@ -551,6 +553,7 @@ using namespace os;
 
     ev.setPointerType(os::PointerType::Mouse);
     ev.setWheelDelta(pt);
+    ev.setWheelDeltaF(gfx::PointF(pt.x, pt.y));
   }
 
   [self queueEvent:ev];

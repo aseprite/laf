@@ -1,5 +1,5 @@
 // LAF Library
-// Copyright (c) 2019-2022  Igara Studio S.A.
+// Copyright (c) 2019-2023  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -56,14 +56,23 @@ public:
 
       case os::Event::MouseWheel:
         m_mousePos = ev.position();
-        logLine("MouseWheel pos=%d,%d %s=%d,%d%s",
+        char buffer[50];
+        if (ev.preciseWheel()) {
+          std::snprintf(buffer, sizeof(buffer),
+                        "%f,%f", ev.wheelDeltaF().x, ev.wheelDeltaF().y);
+          m_hue += ev.wheelDeltaF().x + ev.wheelDeltaF().y;
+        }
+        else {
+          std::snprintf(buffer, sizeof(buffer),
+                        "%d,%d", ev.wheelDelta().x, ev.wheelDelta().y);
+          m_hue += double(ev.wheelDelta().x + ev.wheelDelta().y);
+        }
+        logLine("MouseWheel pos=%d,%d %s=%s%s",
                 ev.position().x,
                 ev.position().y,
-                ev.preciseWheel() ? " preciseWheel": "wheel",
-                ev.wheelDelta().x,
-                ev.wheelDelta().y,
+                ev.preciseWheel() ? "preciseWheel": "wheel",
+                buffer,
                 modifiersToString(ev.modifiers()).c_str());
-        m_hue += double(ev.wheelDelta().x + ev.wheelDelta().y);
         break;
 
       case os::Event::KeyDown:
