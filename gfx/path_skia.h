@@ -72,7 +72,7 @@ namespace gfx {
     }
 
     Path& roundedRect(const Rect& rc, float rx, float ry) {
-      m_skPath.addRoundRect(SkRect::MakeXYWH(rc.x, rc.y, rc.w, rc.h), rx, ry);
+      m_skPath.addRoundRect(SkRect::MakeXYWH(rc.x + 0.5, rc.y + 0.5, rc.w, rc.h), rx, ry);
       return *this;
     }
 
