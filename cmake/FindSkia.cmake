@@ -128,14 +128,22 @@ if(NOT ZLIB_LIBRARIES)
   set(ZLIB_LIBRARIES ${ZLIB_LIBRARY})
 endif()
 
+if(USE_SHARED_FREETYPE)
+find_library(FREETYPE_LIBRARY freetype2)
+else()
 set(FREETYPE_FOUND ON)
 find_library(FREETYPE_LIBRARY freetype2 PATH "${SKIA_LIBRARY_DIR}" NO_DEFAULT_PATH)
 set(FREETYPE_LIBRARIES ${FREETYPE_LIBRARY})
 set(FREETYPE_INCLUDE_DIRS "${SKIA_DIR}/third_party/externals/freetype/include")
+endif()
 
+if(USE_SHARED_HARFBUZZ)
+find_library(HARFBUZZ_LIBRARY harfbuzz)
+else()
 find_library(HARFBUZZ_LIBRARY harfbuzz PATH "${SKIA_LIBRARY_DIR}" NO_DEFAULT_PATH)
 set(HARFBUZZ_LIBRARIES ${HARFBUZZ_LIBRARY})
 set(HARFBUZZ_INCLUDE_DIRS "${SKIA_DIR}/third_party/externals/harfbuzz/src")
+endif()
 
 set(SKIA_LIBRARIES
   ${SKIA_LIBRARY}
