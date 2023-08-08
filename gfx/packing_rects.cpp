@@ -1,5 +1,5 @@
 // LAF Gfx Library
-// Copyright (C) 2019  Igara Studio S.A.
+// Copyright (C) 2019-2023  Igara Studio S.A.
 // Copyright (C) 2001-2014 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -52,9 +52,11 @@ Size PackingRects::bestFit(base::task_token& token,
   bool fit = false;
   while (!token.canceled()) {
     if (w*h >= neededArea) {
-      fit = pack(Size(w, h), token);
+      Size sizeCandidate = Size(w + 2 * m_borderPadding,
+                                h + 2 * m_borderPadding);
+      fit = pack(sizeCandidate, token);
       if (fit) {
-        size = Size(w, h);
+        size = sizeCandidate;
         break;
       }
     }
@@ -101,25 +103,33 @@ bool PackingRects::pack(const Size& size,
 
     gfx::Rect& rc = *rcPtr;
 
-    // The rectangles are treated as its original size during placement,
-    // but occupies an extra border of <shapePadding> pixels once its
-    // position has been determined.
-    // This ensures that all rectangles are padded by <sp> pixels,
-    // and are still placed correctly near edges, e.g. when remaining
-    // horizontal space is between <width> and <width>+<shapePadding>.
+    // The rectangles are treated as its original size +
+    // conditional extra border of <shapePadding> during placement.
     for (int v=0; v<=m_bounds.h-rc.h; ++v) {
       for (int u=0; u<=m_bounds.w-rc.w; ++u) {
         if (token.canceled())
           return false;
 
-        gfx::Rect possible(m_bounds.x + u, m_bounds.y + v, rc.w, rc.h);
+        // It's necessary to consider the <shapePadding> as an
+        // integral part of the image size; otherwise, the region
+        // subtraction process may be incorrect, resulting in
+        // overlapping of shape padding between adjacent sprites.
+        // This fix resolves the special cases of exporting with
+        // sheet type 'Packed' + 'Trim Cels' true +
+        // 'Shape padding' > 0 + series of particular image sizes.
+        int wShapePadding =
+          ((u + rc.w) == m_bounds.w ? 0 : m_shapePadding);
+        int hShapePadding =
+          ((v + rc.h) == m_bounds.h ? 0 : m_shapePadding);
+        gfx::Rect possible(m_bounds.x + u,
+                           m_bounds.y + v,
+                           rc.w + wShapePadding,
+                           rc.h + hShapePadding);
+
         Region::Overlap overlap = rgn.contains(possible);
         if (overlap == Region::In) {
-          rc = possible;
-          rgn.createSubtraction(
-            rgn,
-            gfx::Region(Rect(rc).inflate(m_shapePadding))
-          );
+          rc = Rect(m_bounds.x + u, m_bounds.y + v, rc.w, rc.h);
+          rgn.createSubtraction(rgn, gfx::Region(Rect(possible)));
           goto next_rc;
         }
       }
