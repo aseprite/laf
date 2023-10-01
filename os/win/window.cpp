@@ -1679,7 +1679,13 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
       ev.setModifiers(get_modifiers_from_last_win32_message());
       ev.setScancode(ourScancode);
       ev.setUnicodeChar(0);
-      ev.setRepeat(std::max(0, int((lparam & 0xffff)-1)));
+
+      // if the last registered key scancode is equal to current
+      // scancode, it means the same event came, thus the key
+      // is being held down, so set repeat to 1
+      if (ourScancode == m_pressedKeyScancode)
+        ev.setRepeat(1);
+      m_pressedKeyScancode = ourScancode;
 
       KEY_TRACE("KEYDOWN vk=%d scancode=%d->%d modifiers=%d\n",
                 vk, scancode, ev.scancode(), ev.modifiers());
@@ -1727,6 +1733,10 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
       ev.setUnicodeChar(0);
       ev.setRepeat(std::max(0, int((lparam & 0xffff)-1)));
       queueEvent(ev);
+
+
+      // set keyscancode to 0 (kKeyNil), since the key has been pressed down
+      m_pressedKeyScancode = KeyScancode::kKeyNil;
 
       // TODO If we use native menus, this message should be given
       // to the DefWindowProc() in some cases (e.g. F10 or Alt keys)

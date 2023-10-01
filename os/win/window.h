@@ -138,6 +138,7 @@ namespace os {
     gfx::Rect m_restoredFrame;
 #endif
 
+    KeyScancode m_pressedKeyScancode = KeyScancode::kKeyNil;
     int m_scale;
     bool m_isCreated;
     // Since Windows Vista, it looks like Microsoft decided to change
