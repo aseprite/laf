@@ -34,6 +34,7 @@
 
 #include <array>
 #include <map>
+#include <set>
 
 #define KEY_TRACE(...)
 #define EVENT_TRACE(...)
@@ -114,6 +115,10 @@ std::map<::Window, WindowX11*> g_activeWindows;
 // processing mouse motion events that are generated at the same time
 // for the XInput devices.
 Time g_lastXInputEventTime = 0;
+
+// Set of all currently pressed keys - used during processing KeyPress or KeyRelease
+// event
+std::set<KeySym> g_pressedKeys;
 
 bool is_mouse_wheel_button(int button)
 {
@@ -1042,17 +1047,19 @@ void WindowX11::processX11Event(XEvent& event)
         KEY_TRACE("Xutf8LookupString %s\n", &buf[0]);
       }
 
-      // Check if the key has been pressed, 
-      // and if yes - check if it's the same one key
-      // as in the previous event.  If it's the same one
-      // - it means key is being held, so set repeat to 1.
+
+      // Check if the key has been pressed, and if yes - check what's
+      // the previous state of the key symbol - if it was previously
+      // pressed set repeat count of 1, if it wasn't pressed previously
+      // it will set repeat count to 0
       if (event.type == KeyPress) {
-        if (keysym == m_pressedKeySym)
+        if (g_pressedKeys.find(keysym) != g_pressedKeys.end())
           ev.setRepeat(1);
-        m_pressedKeySym = keysym;
+        else
+          g_pressedKeys.insert(keysym);
       }
       else
-        m_pressedKeySym = 0;
+        g_pressedKeys.erase(keysym);
 
       // Key event used by the input method (e.g. when the users
       // presses a dead key).

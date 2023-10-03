@@ -128,8 +128,6 @@ private:
   bool m_resizable = false;
   bool m_transparent = false;
 
-  KeySym m_pressedKeySym = 0;
-
   // Double-click info
   Event::MouseButton m_doubleClickButton;
   base::tick_t m_doubleClickTick;
