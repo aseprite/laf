@@ -16,6 +16,7 @@
 #include "base/replace_string.h"
 #include "base/split_string.h"
 #include "os/common/file_dialog.h"
+#include "os/x11/x11.h"
 
 #include <cstdio>              // popen/pclose()
 #include <cstring>
@@ -139,6 +140,9 @@ public:
         // between the given "parent" argument in this show() function
         // and the created window by the utility.
 
+        // Flushes pending events to the X Server, so that input does not
+        // get stuck when opening a pipe to zenity.
+        XFlush(X11::instance()->display());
         // Here we run the command and get a handle to read its
         // stdout.
         FILE* f = popen(cmd.c_str(), "r");
