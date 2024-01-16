@@ -26,6 +26,11 @@
   #include <string.h>
 #endif
 
+#if LAF_LINUX
+  #include "base/fs.h"
+  #include <stdlib.h>
+  #include <cstring>
+#endif
 namespace base {
 
 #if LAF_WINDOWS
@@ -107,12 +112,22 @@ pid get_current_process_id()
 
 bool is_process_running(pid pid, const char* pname)
 {
-  return (kill(pid, 0) == 0);
+  char path[128];
+  memset(path, 0, 128);
+  sprintf(path, "/proc/%d/exe", pid);
+  char* exepath = realpath(path, nullptr);
+  if (!exepath)
+    return false;
+
+  auto exename = base::get_file_name(exepath);
+  free(exepath);
+
+  return exename == std::string(pname);
 }
 
 bool is_process_running(pid pid)
 {
-  return is_process_running(pid, "");
+  return (kill(pid, 0) == 0);
 }
 
 #endif
