@@ -13,7 +13,6 @@
 
 #if LAF_WINDOWS
   #include <windows.h>
-  #include <iostream>
   #include <tlhelp32.h>
 #else
   #include <signal.h>
@@ -23,14 +22,11 @@
 
 #if LAF_MACOS
   #include <libproc.h>
-  #include <string.h>
-#endif
-
-#if LAF_LINUX
+#elif LAF_LINUX
   #include "base/fs.h"
-  #include <stdlib.h>
   #include <cstring>
 #endif
+
 namespace base {
 
 #if LAF_WINDOWS
@@ -40,9 +36,8 @@ pid get_current_process_id()
   return (pid)GetCurrentProcessId();
 }
 
-bool is_process_running(pid pid, const char* pname)
+std::string get_process_name(pid pid)
 {
-  bool running = false;
   HANDLE handle = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
   if (handle) {
     PROCESSENTRY32 pe;
@@ -55,32 +50,14 @@ bool is_process_running(pid pid, const char* pname)
         for (char& c : str) {
           c = tolower(c);
         }
-        if (pe.th32ProcessID == pid &&
-            str == pname) {
-          running = true;
+        if (pe.th32ProcessID == pid) {
+          return str;
         }
       } while (Process32Next(handle, &pe));
     }
     CloseHandle(handle);
   }
-
-  return running;
-}
-
-bool is_process_running(pid pid)
-{
-  bool running = false;
-
-  HANDLE handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, pid);
-  if (handle) {
-    DWORD exitCode = 0;
-    if (GetExitCodeProcess(handle, &exitCode)) {
-      running = (exitCode == STILL_ACTIVE);
-    }
-    CloseHandle(handle);
-  }
-
-  return running;
+  return "";
 }
 
 #elif LAF_MACOS
@@ -90,17 +67,12 @@ pid get_current_process_id()
   return (pid)getpid();
 }
 
-bool is_process_running(pid pid, const char* pname)
+std::string get_process_name(pid pid)
 {
   struct proc_bsdinfo process;
   proc_pidinfo(pid, PROC_PIDTBSDINFO, 0,
                &process, PROC_PIDTBSDINFO_SIZE);
-  return (strcmp(pname, process.pbi_name) == 0);
-}
-
-bool is_process_running(pid pid)
-{
-  return (kill(pid, 0) == 0);
+  return process.pbi_name;
 }
 
 #elif LAF_LINUX
@@ -110,26 +82,34 @@ pid get_current_process_id()
   return (pid)getpid();
 }
 
-bool is_process_running(pid pid, const char* pname)
+std::string get_process_name(pid pid)
 {
   char path[128];
   memset(path, 0, 128);
   sprintf(path, "/proc/%d/exe", pid);
   char* exepath = realpath(path, nullptr);
   if (!exepath)
-    return false;
+    return "";
 
   auto exename = base::get_file_name(exepath);
   free(exepath);
 
-  return exename == std::string(pname);
+  return exename;
+}
+
+#endif
+
+bool is_process_running(pid pid, std::string currentProcessName)
+{
+  std::string pidProcessName = get_process_name(pid);
+  if (pidProcessName == "")
+    return false;
+  return pidProcessName == currentProcessName;
 }
 
 bool is_process_running(pid pid)
 {
-  return (kill(pid, 0) == 0);
-}
-
-#endif
+  return false;
+};
 
 } // namespace base

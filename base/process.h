@@ -11,14 +11,20 @@
 
 #include "base/ints.h"
 
+#include <string>
+
 namespace base {
 
   typedef uint32_t pid;
 
   pid get_current_process_id();
 
-  bool is_process_running(pid pid, const char* pname);
+  std::string get_process_name(pid pid);
 
+  bool is_process_running(pid pid, std::string currentProcessName);
+
+  // Declaration to avoid errors during testing of Github actions
+  // TO DO: remove function after the implementation of PR aseprite/aseprite#4266
   bool is_process_running(pid pid);
 
 } // namespace base
