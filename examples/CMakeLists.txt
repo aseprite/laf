@@ -23,4 +23,10 @@ if(LAF_BACKEND STREQUAL "skia")
   laf_add_example(multiple_windows GUI)
   laf_add_example(panviewport GUI)
   laf_add_example(shader GUI)
+
+  if(MSVC)
+    # complextextlayout.cpp has wide strings. Specify UTF-8 charset explicitly for it.
+    # "/utf-8" is equivalent to "/source-charset:utf-8 /execution-charset:utf-8".
+    target_compile_options(complextextlayout PRIVATE "/utf-8")
+  endif()
 endif()
