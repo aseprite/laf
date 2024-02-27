@@ -1751,11 +1751,15 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
         }
       }
 
-      DragFinish(hdrop);
-
       Event ev;
       ev.setType(Event::DropFiles);
       ev.setFiles(files);
+      POINT pos;
+      if (DragQueryPoint(hdrop, &pos))
+        ev.setPosition(gfx::Point(pos.x, pos.y));
+
+      DragFinish(hdrop);
+
       queueEvent(ev);
       break;
     }
