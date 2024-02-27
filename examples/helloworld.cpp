@@ -39,6 +39,9 @@ void draw_window(os::Window* window)
 
 int app_main(int argc, char* argv[])
 {
+  int* ptr = nullptr;
+  *ptr = 5;
+
   os::SystemRef system = os::make_system();
   system->setAppMode(os::AppMode::GUI);
 
