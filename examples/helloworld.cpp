@@ -39,7 +39,7 @@ void draw_window(os::Window* window)
 
 int app_main(int argc, char* argv[])
 {
-  os::SystemRef system = os::make_system();
+  const os::SystemRef system = os::make_system();
   system->setAppMode(os::AppMode::GUI);
 
   os::WindowRef window = system->makeWindow(400, 300);
