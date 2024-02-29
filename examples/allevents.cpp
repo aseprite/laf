@@ -40,7 +40,9 @@ public:
         break;
 
       case os::Event::DropFiles:
-        logLine("DropFiles files={");
+        logLine("DropFiles pos=%d,%d files={",
+                ev.position().x,
+                ev.position().y);
         for (const auto& file : ev.files()) {
           logLine("  \"%s\"", file.c_str());
         }
