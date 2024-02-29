@@ -105,6 +105,7 @@ Atom XdndFinished = 0;
 Atom XdndSelection = 0;
 Atom URI_LIST = 0;
 ::Window g_dndSource = 0;
+gfx::Point g_dndPosition;
 
 // See https://bugs.freedesktop.org/show_bug.cgi?id=12871 for more
 // information, it looks like the official way to convert a X Window
@@ -1218,6 +1219,9 @@ void WindowX11::processX11Event(XEvent& event)
       }
       else if (event.xclient.message_type == XdndPosition) {
         auto sourceWindow = (::Window)event.xclient.data.l[0];
+        // Save the latest mouse position reported by the source window
+        g_dndPosition.x = event.xclient.data.l[2] >> 16;
+        g_dndPosition.y = event.xclient.data.l[2] & 0xFFFF;
 
         // TODO Ask to the library user if we can drop and the action
         //      that will take place
@@ -1282,6 +1286,9 @@ void WindowX11::processX11Event(XEvent& event)
               os::Event ev;
               ev.setType(os::Event::DropFiles);
               ev.setFiles(files);
+              // Mouse position is relative to the root window, so
+              // we make it relative to the content rect.
+              ev.setPosition(g_dndPosition - contentRect().origin());
               queueEvent(ev);
 
               successful = true;
