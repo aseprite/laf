@@ -42,6 +42,9 @@ public:
   Ref<Window> makeWindow(const WindowSpec& spec) override { return nullptr; }
   Ref<Surface> makeSurface(int width, int height,
                            const os::ColorSpaceRef& colorSpace) override { return nullptr; }
+  Ref<Surface> makeSurface(int width, int height,
+                           const os::SurfaceFormatData& sf,
+                           const unsigned char* data = nullptr) override { return nullptr; }
   Ref<Surface> makeRgbaSurface(int width, int height,
                                const os::ColorSpaceRef& colorSpace) override { return nullptr; }
   Ref<Surface> loadSurface(const char* filename) override { return nullptr; }

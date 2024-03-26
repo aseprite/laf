@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2022  Igara Studio S.A.
+// Copyright (C) 2018-2024  Igara Studio S.A.
 // Copyright (C) 2012-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -162,6 +162,7 @@ namespace os {
     }
 
     virtual Ref<Surface> makeSurface(int width, int height, const os::ColorSpaceRef& colorSpace = nullptr) = 0;
+    virtual Ref<Surface> makeSurface(int width, int height, const os::SurfaceFormatData& sf, const unsigned char* data = nullptr) = 0;
     virtual Ref<Surface> makeRgbaSurface(int width, int height, const os::ColorSpaceRef& colorSpace = nullptr) = 0;
     virtual Ref<Surface> loadSurface(const char* filename) = 0;
     virtual Ref<Surface> loadRgbaSurface(const char* filename) = 0;

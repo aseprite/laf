@@ -12,6 +12,7 @@
 #include "gfx/point.h"
 #include "os/color_space.h"
 #include "os/cursor.h"
+#include "os/dnd.h"
 #include "os/native_cursor.h"
 #include "os/ref.h"
 #include "os/screen.h"
@@ -194,6 +195,9 @@ namespace os {
     // devices like stylus can be used to move and resize the window.
     std::function<Hit(os::Window*, const gfx::Point& pos)> handleHitTest = nullptr;
 
+    void setDragTarget(DragTarget* delegate) { m_dragTarget = delegate; }
+    bool hasDragTarget() { return m_dragTarget != nullptr; }
+
     template<typename T>
     T* userData() { return reinterpret_cast<T*>(m_userData); }
 
@@ -204,11 +208,21 @@ namespace os {
     virtual GrDirectContext* sk_grCtx() const = 0;
 #endif
 
+    void notifyDragEnter(os::DragEvent& ev);
+    void notifyDrag(os::DragEvent& ev);
+    void notifyDragLeave(os::DragEvent& ev);
+    void notifyDrop(os::DragEvent& ev);
+
   protected:
     virtual void onQueueEvent(Event& ev);
+    virtual void onDragEnter(os::DragEvent& ev);
+    virtual void onDrag(os::DragEvent& ev);
+    virtual void onDragLeave(os::DragEvent& ev);
+    virtual void onDrop(os::DragEvent& ev);
 
   private:
     void* m_userData;
+    DragTarget* m_dragTarget = nullptr;
   };
 
 } // namespace os

@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2018-2022  Igara Studio S.A.
+// Copyright (c) 2018-2024  Igara Studio S.A.
 // Copyright (c) 2016-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -14,12 +14,17 @@
 #include "base/file_handle.h"
 #include "gfx/path.h"
 #include "os/skia/skia_helpers.h"
+#include "os/surface_format.h"
 #include "os/system.h"
 
+#include "include/core/SkAlphaType.h"
 #include "include/codec/SkCodec.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColorFilter.h"
+#include "include/core/SkImageInfo.h"
 #include "include/core/SkPixelRef.h"
+#include "include/core/SkPixmap.h"
+#include "include/core/SkSize.h"
 #include "include/core/SkStream.h"
 #include "include/private/SkColorData.h"
 
@@ -29,6 +34,7 @@
 #endif
 
 #include <memory>
+#include <stddef.h>
 
 namespace os {
 
@@ -73,6 +79,40 @@ void SkiaSurface::create(int width, int height, const os::ColorSpaceRef& cs)
     throw base::Exception("Cannot create Skia surface");
 
   bmp.eraseColor(SK_ColorTRANSPARENT);
+  swapBitmap(bmp);
+}
+
+void SkiaSurface::create(int width, int height,
+                         const os::SurfaceFormatData& sf,
+                         const unsigned char* data)
+{
+  destroy();
+
+  ASSERT(!m_surface)
+    ASSERT(width > 0);
+  ASSERT(height > 0);
+
+  SkColorType ct = SkiaSurface::deductSkColorType(sf);
+  SkAlphaType at = SkiaSurface::asSkAlphaType(sf.pixelAlpha);
+
+  SkBitmap bmp;
+  if (!bmp.tryAllocPixels(
+      SkImageInfo::Make(width, height, ct, at)))
+    throw base::Exception("Cannot create Skia surface");
+
+  if (data) {
+    // Convert 24bpp data to 32bpp data because Skia doesn't work with 24bpp
+    // images.
+    if (sf.bitsPerPixel == 24) {
+      for (int i=0,j=0; j<width * height * 3; i+=4,j+=3)
+        std::memcpy(&static_cast<unsigned char*>(bmp.getPixels())[i], &data[j], 3);
+    }
+    else
+      bmp.writePixels(SkPixmap(bmp.info(), data, size_t(width) * size_t(sf.bitsPerPixel / 8)));
+  }
+  else {
+    bmp.eraseColor(SK_ColorTRANSPARENT);
+  }
   swapBitmap(bmp);
 }
 
@@ -269,8 +309,9 @@ uint8_t* SkiaSurface::getData(int x, int y) const
 
 void SkiaSurface::getFormat(SurfaceFormatData* formatData) const
 {
-  formatData->format = kRgbaSurfaceFormat;
+  formatData->format = SurfaceFormat::kRgbaSurfaceFormat;
   formatData->bitsPerPixel = 8*m_bitmap.bytesPerPixel();
+  formatData->pixelAlpha = SkiaSurface::asPixelAlpha(m_bitmap.alphaType());
 
   switch (m_bitmap.colorType()) {
     case kRGB_565_SkColorType:
@@ -323,6 +364,89 @@ void SkiaSurface::getFormat(SurfaceFormatData* formatData) const
       formatData->blueMask   = 0;
       formatData->alphaMask  = 0;
       break;
+  }
+}
+
+// static
+SkColorType SkiaSurface::deductSkColorType(const os::SurfaceFormatData& sf)
+{
+  if (sf.redShift   == SK_RGBA_R32_SHIFT &&
+      sf.greenShift == SK_RGBA_G32_SHIFT &&
+      sf.blueShift  == SK_RGBA_B32_SHIFT &&
+      sf.alphaShift == SK_RGBA_A32_SHIFT &&
+      sf.redMask    == (255 << SK_RGBA_R32_SHIFT) &&
+      sf.greenMask  == (255 << SK_RGBA_G32_SHIFT) &&
+      sf.blueMask   == (255 << SK_RGBA_B32_SHIFT) &&
+      sf.alphaMask  == (255 << SK_RGBA_A32_SHIFT))
+    return kRGBA_8888_SkColorType;
+
+  if (sf.redShift   == SK_RGBA_R32_SHIFT &&
+      sf.greenShift == SK_RGBA_G32_SHIFT &&
+      sf.blueShift  == SK_RGBA_B32_SHIFT &&
+      sf.redMask    == (255 << SK_RGBA_R32_SHIFT) &&
+      sf.greenMask  == (255 << SK_RGBA_G32_SHIFT) &&
+      sf.blueMask   == (255 << SK_RGBA_B32_SHIFT) &&
+      sf.alphaMask  == 0)
+    return kRGB_888x_SkColorType;
+
+  if (sf.redShift   == SK_BGRA_R32_SHIFT &&
+      sf.greenShift == SK_BGRA_G32_SHIFT &&
+      sf.blueShift  == SK_BGRA_B32_SHIFT &&
+      sf.alphaShift == SK_BGRA_A32_SHIFT &&
+      sf.redMask    == (255 << SK_BGRA_R32_SHIFT) &&
+      sf.greenMask  == (255 << SK_BGRA_G32_SHIFT) &&
+      sf.blueMask   == (255 << SK_BGRA_B32_SHIFT) &&
+      sf.alphaMask  == (255 << SK_BGRA_A32_SHIFT))
+    return kBGRA_8888_SkColorType;
+
+  if (sf.redShift   == SK_R4444_SHIFT &&
+      sf.greenShift == SK_G4444_SHIFT &&
+      sf.blueShift  == SK_B4444_SHIFT &&
+      sf.alphaShift == SK_A4444_SHIFT &&
+      sf.redMask    == (15 << SK_R4444_SHIFT) &&
+      sf.greenMask  == (15 << SK_G4444_SHIFT) &&
+      sf.blueMask   == (15 << SK_B4444_SHIFT) &&
+      sf.alphaMask  == (15 << SK_A4444_SHIFT))
+    return kARGB_4444_SkColorType;
+
+  if (sf.redShift   == SK_R16_SHIFT &&
+      sf.greenShift == SK_G16_SHIFT &&
+      sf.blueShift  == SK_B16_SHIFT &&
+      sf.alphaShift == 0 &&
+      sf.redMask    == SK_R16_MASK &&
+      sf.greenMask  == SK_G16_MASK &&
+      sf.blueMask   == SK_B16_MASK &&
+      sf.alphaMask  == 0)
+    return kRGB_565_SkColorType;
+
+  return kUnknown_SkColorType;
+}
+
+// static
+os::PixelAlpha SkiaSurface::asPixelAlpha(SkAlphaType at)
+{
+  switch(at) {
+    case SkAlphaType::kOpaque_SkAlphaType:
+      return os::PixelAlpha::kOpaque;
+    case SkAlphaType::kPremul_SkAlphaType:
+      return os::PixelAlpha::kPremultiplied;
+    case SkAlphaType::kUnpremul_SkAlphaType:
+      return os::PixelAlpha::kStraight;
+    default:
+      throw base::Exception("Unsupported alpha type");
+  }
+}
+
+// static
+SkAlphaType SkiaSurface::asSkAlphaType(os::PixelAlpha pa)
+{
+  switch(pa) {
+    case os::PixelAlpha::kOpaque:
+      return SkAlphaType::kOpaque_SkAlphaType;
+    case os::PixelAlpha::kPremultiplied:
+      return SkAlphaType::kPremul_SkAlphaType;
+    case os::PixelAlpha::kStraight:
+      return SkAlphaType::kUnpremul_SkAlphaType;
   }
 }
 

@@ -31,6 +31,11 @@ namespace base {
       std::swap(m_ptr, tmp.m_ptr);
     }
 
+    explicit ComPtr(T* p) : m_ptr(p) {
+      if (m_ptr)
+        m_ptr->AddRef();
+    }
+
     ~ComPtr() {
       reset();
     }
@@ -41,11 +46,18 @@ namespace base {
 
     // Add new reference using operator=()
     ComPtr<T>& operator=(const ComPtr<T>& p) {
-      if (m_ptr)
-        m_ptr->Release();
-      m_ptr = p.m_ptr;
-      if (m_ptr)
-        m_ptr->AddRef();
+      if (this != &p) {
+        if (m_ptr)
+          m_ptr->Release();
+        m_ptr = p.m_ptr;
+        if (m_ptr)
+          m_ptr->AddRef();
+      }
+      return *this;
+    }
+
+    ComPtr<T>& operator=(ComPtr<T>&& p) noexcept {
+      std::swap(m_ptr, p.m_ptr);
       return *this;
     }
 

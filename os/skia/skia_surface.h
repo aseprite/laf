@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2018-2022  Igara Studio S.A.
+// Copyright (c) 2018-2024  Igara Studio S.A.
 // Copyright (c) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -15,8 +15,10 @@
 #include "os/common/generic_surface.h"
 #include "os/common/sprite_sheet_font.h"
 #include "os/skia/skia_color_space.h"
+#include "os/surface_format.h"
 
 #include "include/core/SkBitmap.h"
+#include "include/core/SkColorType.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkSurface.h"
 
@@ -31,6 +33,7 @@ public:
   ~SkiaSurface();
 
   void create(int width, int height, const os::ColorSpaceRef& cs);
+  void create(int width, int height,  const SurfaceFormatData& sf, const unsigned char* data);
   void createRgba(int width, int height, const os::ColorSpaceRef& cs);
   void destroy();
 
@@ -115,6 +118,9 @@ public:
   static SurfaceRef loadSurface(const char* filename);
 
 private:
+  static SkColorType deductSkColorType(const os::SurfaceFormatData& sf);
+  static os::PixelAlpha asPixelAlpha(SkAlphaType at);
+  static SkAlphaType asSkAlphaType(os::PixelAlpha pa);
   void skDrawSurface(
     const Surface* src,
     const gfx::Clip& clip,

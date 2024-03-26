@@ -8,12 +8,16 @@
 #include "config.h"
 #endif
 
+#include "base/log.h"
 #include "os/win/system.h"
 
 #include "gfx/color.h"
 #include "os/win/screen.h"
 
 #include <limits>
+
+#pragma push_macro("ERROR")
+#undef ERROR
 
 namespace os {
 
@@ -155,7 +159,22 @@ SystemWin::SystemWin()
 
 SystemWin::~SystemWin()
 {
+  if (m_appMode == AppMode::GUI) {
+    OleUninitialize();
+  }
   destroyInstance();
+}
+
+void SystemWin::setAppMode(AppMode appMode)
+{
+  m_appMode = appMode;
+  if (m_appMode == AppMode::GUI) {
+    auto result = OleInitialize(nullptr);
+    if (result != S_OK && result != S_FALSE) {
+      LOG(LogLevel::ERROR, "WIN: Could not initialize OLE (%d)", result);
+      return;
+    }
+  }
 }
 
 void SystemWin::setAppName(const std::string& appName)
@@ -316,3 +335,5 @@ void SystemWin::_setInternalMousePosition(const Event& ev)
 }
 
 } // namespace os
+
+#pragma pop_macro("ERROR")

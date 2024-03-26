@@ -13,6 +13,7 @@ set(LAF_OS_SOURCES
 if(WIN32)
   list(APPEND LAF_OS_SOURCES
     win/color_space.cpp
+    win/dnd.cpp
     win/event_queue.cpp
     win/keys.cpp
     win/native_dialogs.cpp

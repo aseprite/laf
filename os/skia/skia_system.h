@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2023  Igara Studio S.A.
+// Copyright (C) 2018-2024  Igara Studio S.A.
 // Copyright (C) 2012-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -16,6 +16,7 @@
 #include "os/skia/skia_font_manager.h"
 #include "os/skia/skia_surface.h"
 #include "os/skia/skia_window.h"
+#include "os/surface_format.h"
 #include "os/window_spec.h"
 
 #if LAF_WINDOWS
@@ -100,6 +101,14 @@ public:
                          const os::ColorSpaceRef& colorSpace) override {
     auto sur = make_ref<SkiaSurface>();
     sur->create(width, height, colorSpace);
+    return sur;
+  }
+
+  SurfaceRef makeSurface(int width, int height,
+                         const os::SurfaceFormatData& sf,
+                         const unsigned char* data) override {
+    auto sur = make_ref<SkiaSurface>();
+    sur->create(width, height, sf, data);
     return sur;
   }
 

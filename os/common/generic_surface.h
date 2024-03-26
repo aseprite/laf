@@ -66,7 +66,7 @@ public:
     SurfaceFormatData format;
     src->getFormat(&format);
 
-    ASSERT(format.format == kRgbaSurfaceFormat);
+    ASSERT(format.format == SurfaceFormat::kRgbaSurfaceFormat);
     ASSERT(format.bitsPerPixel == 32);
 
     for (int v=0; v<clip.size.h; ++v) {

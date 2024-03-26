@@ -16,6 +16,7 @@
 #include "os/native_cursor.h"
 #include "os/pointer_type.h"
 #include "os/screen.h"
+#include "os/win/dnd.h"
 #include "os/win/wintab.h"
 
 #include <string>
@@ -137,6 +138,8 @@ namespace os {
 #else
     gfx::Rect m_restoredFrame;
 #endif
+
+    DragTargetAdapter m_dragTargetAdapter = DragTargetAdapter(this);
 
     int m_scale;
     bool m_isCreated;

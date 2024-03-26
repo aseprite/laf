@@ -48,6 +48,50 @@ void Window::queueEvent(os::Event& ev)
   onQueueEvent(ev);
 }
 
+void Window::notifyDragEnter(os::DragEvent& ev)
+{
+  onDragEnter(ev);
+}
+
+void Window::notifyDrag(os::DragEvent& ev)
+{
+  onDrag(ev);
+}
+
+void Window::notifyDragLeave(os::DragEvent& ev)
+{
+  onDragLeave(ev);
+}
+
+void Window::notifyDrop(os::DragEvent& ev)
+{
+  onDrop(ev);
+}
+
+void Window::onDragEnter(os::DragEvent& ev)
+{
+  if (m_dragTarget)
+    m_dragTarget->dragEnter(ev);
+}
+
+void Window::onDrag(os::DragEvent& ev)
+{
+  if (m_dragTarget)
+    m_dragTarget->drag(ev);
+}
+
+void Window::onDragLeave(os::DragEvent& ev)
+{
+  if (m_dragTarget)
+    m_dragTarget->dragLeave(ev);
+}
+
+void Window::onDrop(os::DragEvent& ev)
+{
+  if (m_dragTarget)
+    m_dragTarget->drop(ev);
+}
+
 void Window::onQueueEvent(Event& ev)
 {
   // Some events are used more than one time (e.g. to send MouseEnter

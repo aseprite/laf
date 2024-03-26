@@ -266,6 +266,11 @@ WindowWin::WindowWin(const WindowSpec& spec)
   // WindowSpec::activate() flag for this)
   m_activate = (spec.parent() == nullptr);
 
+  auto result = RegisterDragDrop(m_hwnd, reinterpret_cast<LPDROPTARGET>(&m_dragTargetAdapter));
+  if (result != S_OK) {
+    LOG(LogLevel::ERROR, "Could not register window for Drag & Drop: %d\n", result);
+  }
+
   // Log information about the system (for debugging/user support
   // purposes in case the window doesn't display anything)
   if (base::get_log_level() >= INFO) {
@@ -307,7 +312,9 @@ WindowWin::~WindowWin()
 
   // If this assert fails it's highly probable that an os::WindowRef
   // was kept alive in some kind of memory leak (or just inside an
-  // os::Event in the os::EventQueue).
+  // os::Event in the os::EventQueue). Also this can happen when
+  // declaring a os::WindowRef before calling os::make_system(),
+  // because of deletion order when destructors got called.
   ASSERT(sys);
 
   if (sys) {
@@ -332,8 +339,9 @@ os::ScreenRef WindowWin::screen() const
 
 os::ColorSpaceRef WindowWin::colorSpace() const
 {
-  if (auto defaultCS = os::instance()->windowsColorSpace())
-    return defaultCS;
+  if (os::instance())
+    if (auto defaultCS = os::instance()->windowsColorSpace())
+      return defaultCS;
 
   if (m_hwnd) {
     HMONITOR monitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);
