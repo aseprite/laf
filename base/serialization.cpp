@@ -8,6 +8,7 @@
 #include "config.h"
 #endif
 
+#include "base/mem_utils.h"
 #include "base/serialization.h"
 
 #include <iostream>
@@ -57,7 +58,7 @@ std::ostream& little_endian::write64(std::ostream& os, uint64_t qword)
 
 std::ostream& little_endian::write_float(std::ostream& os, float value)
 {
-  const int b = *(reinterpret_cast<int*>(&value));
+  const int b = *(copy_reinterpret_cast<int*>(&value));
   os.put((int)((b & 0x000000ffl)));
   os.put((int)((b & 0x0000ff00l) >> 8));
   os.put((int)((b & 0x00ff0000l) >> 16));
@@ -67,7 +68,7 @@ std::ostream& little_endian::write_float(std::ostream& os, float value)
 
 std::ostream& little_endian::write_double(std::ostream& os, double value)
 {
-  const long long b = *(reinterpret_cast<long long*>(&value));
+  const long long b = *(copy_reinterpret_cast<long long*>(&value));
   os.put((int)((b & 0x00000000000000ffl)));
   os.put((int)((b & 0x000000000000ff00l) >> 8));
   os.put((int)((b & 0x0000000000ff0000l) >> 16));
@@ -126,7 +127,7 @@ float little_endian::read_float(std::istream& is)
   b3 = is.get();
   b4 = is.get();
   int v = ((b4 << 24) | (b3 << 16) | (b2 << 8) | b1);
-  return *reinterpret_cast<float*>(&v);
+  return *copy_reinterpret_cast<float*>(&v);
 }
 
 double little_endian::read_double(std::istream& is)
@@ -148,7 +149,7 @@ double little_endian::read_double(std::istream& is)
            ((long long)b3 << 16) |
            ((long long)b2 << 8) |
            (long long)b1);
-  return *reinterpret_cast<double*>(&v);
+  return *copy_reinterpret_cast<double*>(&v);
 }
 
 std::ostream& big_endian::write16(std::ostream& os, uint16_t word)
@@ -182,7 +183,7 @@ std::ostream& big_endian::write64(std::ostream& os, uint64_t qword)
 
 std::ostream& big_endian::write_float(std::ostream& os, float value)
 {
-  const int b = *(reinterpret_cast<int*>(&value));
+  const int b = *(copy_reinterpret_cast<int*>(&value));
   os.put((int)((b & 0xff000000l) >> 24));
   os.put((int)((b & 0x00ff0000l) >> 16));
   os.put((int)((b & 0x0000ff00l) >> 8));
@@ -192,7 +193,7 @@ std::ostream& big_endian::write_float(std::ostream& os, float value)
 
 std::ostream& big_endian::write_double(std::ostream& os, double value)
 {
-  const long long b = *(reinterpret_cast<long long*>(&value));
+  const long long b = *(copy_reinterpret_cast<long long*>(&value));
   os.put((int)((b & 0xff00000000000000l) >> 56));
   os.put((int)((b & 0x00ff000000000000l) >> 48));
   os.put((int)((b & 0x0000ff0000000000l) >> 40));
@@ -251,7 +252,7 @@ float big_endian::read_float(std::istream& is)
   b2 = is.get();
   b1 = is.get();
   int v = ((b4 << 24) | (b3 << 16) | (b2 << 8) | b1);
-  return *reinterpret_cast<float*>(&v);
+  return *copy_reinterpret_cast<float*>(&v);
 }
 
 double big_endian::read_double(std::istream& is)
@@ -273,7 +274,7 @@ double big_endian::read_double(std::istream& is)
            ((long long)b3 << 16) |
            ((long long)b2 << 8) |
            (long long)b1);
-  return *reinterpret_cast<double*>(&v);
+  return *copy_reinterpret_cast<double*>(&v);
 }
 
 
