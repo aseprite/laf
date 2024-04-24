@@ -171,7 +171,7 @@ std::string get_canonical_path(const std::string& path)
   // Ignore return value as realpath() returns nullptr anyway when the
   // resolved_path parameter is specified.
   realpath(path.c_str(), buffer);
-  return path;
+  return buffer;
 }
 
 paths list_files(const std::string& path)
