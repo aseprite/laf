@@ -123,9 +123,14 @@ void remove_directory(const std::string& path)
 std::string get_current_path()
 {
   std::vector<char> path(MAXPATHLEN);
-  if (getcwd(&path[0], path.size()))
-    return std::string(&path[0]);
+  if (getcwd(path.data(), path.size()))
+    return std::string(path.data());
   return std::string();
+}
+
+void set_current_path(const std::string& path)
+{
+  chdir(path.data());
 }
 
 std::string get_app_path()

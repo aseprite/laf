@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2020 Igara Studio S.A.
+// Copyright (c) 2020-2024 Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -121,6 +121,11 @@ std::string get_current_path()
     return to_utf8(buffer);
   else
     return "";
+}
+
+void set_current_path(const std::string& path)
+{
+  ::SetCurrentDirectory(from_utf8(path).c_str());
 }
 
 std::string get_app_path()
