@@ -20,7 +20,9 @@ namespace base {
 
   std::string string_to_lower(const std::string& original);
   std::string string_to_upper(const std::string& original);
-
+  std::string removeEscapeCharFromText(const std::string& original,
+                                       const int escapeChar);
+  
   std::string to_utf8(const wchar_t* src, size_t n);
 
   inline std::string to_utf8(const std::wstring& widestring) {

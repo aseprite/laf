@@ -69,6 +69,24 @@ std::string string_to_upper(const std::string& original)
   return to_utf8(result);
 }
 
+std::string removeEscapeCharFromText(const std::string& original,
+                                     const int escapeChar)
+{
+  std::wstring newText; // wstring is used to properly push_back() multibyte chars
+  newText.reserve(original.size());
+
+  utf8_decode decode(original);
+  while (int chr = decode.next()) {
+    if (chr == escapeChar) {
+      chr = decode.next();
+      if (!chr)
+        break;    // Ill-formed string (it ends with escape character)
+    }
+    newText.push_back(chr);
+  }
+  return to_utf8(newText);
+}
+
 #ifdef LAF_WINDOWS
 
 std::string to_utf8(const wchar_t* src, const size_t n)
