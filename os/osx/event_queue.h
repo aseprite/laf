@@ -12,9 +12,8 @@
 #include "os/event.h"
 #include "os/event_queue.h"
 
-#include <map>
+#include <queue>
 #include <mutex>
-#include <cstdint>
 
 namespace os {
 
@@ -27,11 +26,8 @@ public:
   void clearEvents() override;
 
 private:
-  void extractEvent(Event& ev, uint32_t eventId);
-
   mutable std::mutex m_mutex;
-  std::map<uint32_t, os::Event> m_events;
-  uint32_t m_nextEventId;
+  std::deque<os::Event> m_events;
 };
 
 using EventQueueImpl = EventQueueOSX;

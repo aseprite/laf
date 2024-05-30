@@ -42,9 +42,6 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
       untilDate = [NSDate distantFuture];
     }
 
-    ev.setType(Event::None);
-    ev.setWindow(nullptr);
-
     NSApplication* app = [NSApplication sharedApplication];
     if (!app)
       return;
@@ -69,8 +66,13 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
           [app.keyWindow.contentView keyDown:event];
         }
         else if (event.type == NSEventTypeApplicationDefined) {
-          const uint32_t eventId = [event data1];
-          extractEvent(ev, eventId);
+          ev.setType(Event::None);
+          ev.setWindow(nullptr);
+          const std::lock_guard lock(m_mutex);
+          if (!m_events.empty()) {
+            ev = m_events.front();
+            m_events.pop_front();
+          }
           return;
         }
         else {
@@ -91,9 +93,7 @@ void EventQueueOSX::queueEvent(const Event& ev)
   if (!app)
     return;
 
-  // Save the event for latter retrieval.
-  const uint32_t eventId = ++m_nextEventId;
-  m_events[eventId] = ev;
+  m_events.push_back(ev);
   [app postEvent:[NSEvent otherEventWithType:NSApplicationDefined
                                     location:NSZeroPoint
                                modifierFlags:0
@@ -101,7 +101,7 @@ void EventQueueOSX::queueEvent(const Event& ev)
                                 windowNumber:0
                                      context:nullptr
                                      subtype:ev.type()
-                                       data1:eventId
+                                       data1:0
                                        data2:0]
        atStart:NO];
 }
@@ -117,13 +117,6 @@ void EventQueueOSX::clearEvents()
 
   [app discardEventsMatchingMask:NSEventMaskAny
                      beforeEvent:[app currentEvent]];
-}
-
-void EventQueueOSX::extractEvent(Event& ev, const uint32_t eventId)
-{
-  const std::lock_guard lock(m_mutex);
-  auto nh = m_events.extract(eventId);
-  ev = nh.mapped();
 }
 
 } // namespace os
