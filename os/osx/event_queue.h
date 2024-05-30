@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2021  Igara Studio S.A.
+// Copyright (C) 2018-2024  Igara Studio S.A.
 // Copyright (C) 2015-2016  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -9,11 +9,12 @@
 #define OS_OSX_EVENT_QUEUE_INCLUDED
 #pragma once
 
-#include "base/concurrent_queue.h"
 #include "os/event.h"
 #include "os/event_queue.h"
 
-#include <atomic>
+#include <map>
+#include <mutex>
+#include <cstdint>
 
 namespace os {
 
@@ -26,10 +27,11 @@ public:
   void clearEvents() override;
 
 private:
-  void wakeUpQueue();
+  void extractEvent(Event& ev, uint32_t eventId);
 
-  base::concurrent_queue<Event> m_events;
-  std::atomic<bool> m_sleeping;
+  mutable std::mutex m_mutex;
+  std::map<uint32_t, os::Event> m_events;
+  uint32_t m_nextEventId;
 };
 
 using EventQueueImpl = EventQueueOSX;

@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2021  Igara Studio S.A.
+// Copyright (C) 2018-2024  Igara Studio S.A.
 // Copyright (C) 2015-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -19,7 +19,6 @@
 namespace os {
 
 EventQueueOSX::EventQueueOSX()
-  : m_sleeping(false)
 {
 }
 
@@ -50,15 +49,16 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
     if (!app)
       return;
 
+    EV_TRACE("EV: Waiting for events\n");
+
     NSEvent* event;
     do {
       // Pump the whole queue of Cocoa events
       event = [app nextEventMatchingMask:NSEventMaskAny
-                               untilDate:[NSDate distantPast]
+                               untilDate:untilDate
                                   inMode:NSDefaultRunLoopMode
                                  dequeue:YES];
 
-    retry:
       if (event) {
         // Intercept <Control+Tab>, <Cmd+[>, and other keyboard
         // combinations, and send them directly to the main
@@ -68,75 +68,62 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
             app.keyWindow) {
           [app.keyWindow.contentView keyDown:event];
         }
+        else if (event.type == NSEventTypeApplicationDefined) {
+          const uint32_t eventId = [event data1];
+          extractEvent(ev, eventId);
+          return;
+        }
         else {
           [app sendEvent:event];
         }
       }
     } while (event);
 
-    if (!m_events.try_pop(ev)) {
-      if (timeout == kWithoutTimeout)
-        EV_TRACE("EV: Waiting for events\n");
-
-      // Wait until there is a Cocoa event in queue
-      m_sleeping = true;
-      event = [app nextEventMatchingMask:NSEventMaskAny
-                               untilDate:untilDate
-                                  inMode:NSDefaultRunLoopMode
-                                 dequeue:YES];
-      m_sleeping = false;
-
-      if (event) {
-        EV_TRACE("EV: Event received!\n");
-        goto retry;
-      }
-      else {
-        EV_TRACE("EV: Timeout!");
-      }
-    }
+    EV_TRACE("EV: Timeout!");
   }
 }
 
 void EventQueueOSX::queueEvent(const Event& ev)
 {
-  if (m_sleeping) {
-    // Wake up the macOS event queue. This is necessary in case that we
-    // change the display color profile from macOS settings: the
-    // display surface is regenerated with the new color space, a
-    // Event::ResizeDisplay event is enqueued and we have to start
-    // processing macOS events again. If we don't wake up the events
-    // queue, the window keeps with a black background and is not
-    // re-painted until we receive some event from the OS, like a
-    // mouse movement.
-    wakeUpQueue();
-    m_sleeping = false;
-  }
-  m_events.push(ev);
-}
-
-void EventQueueOSX::wakeUpQueue()
-{
-  EV_TRACE("EV: Force queue wake up!\n");
+  const std::lock_guard lock(m_mutex);
 
   NSApplication* app = [NSApplication sharedApplication];
   if (!app)
     return;
 
+  // Save the event for latter retrieval.
+  const uint32_t eventId = ++m_nextEventId;
+  m_events[eventId] = ev;
   [app postEvent:[NSEvent otherEventWithType:NSApplicationDefined
                                     location:NSZeroPoint
                                modifierFlags:0
                                    timestamp:0
                                 windowNumber:0
                                      context:nullptr
-                                     subtype:0
-                                       data1:0
+                                     subtype:ev.type()
+                                       data1:eventId
                                        data2:0]
-         atStart:NO];
+       atStart:NO];
 }
 
 void EventQueueOSX::clearEvents()
 {
+  const std::lock_guard lock(m_mutex);
   m_events.clear();
+
+  NSApplication* app = [NSApplication sharedApplication];
+  if (!app)
+    return;
+
+  [app discardEventsMatchingMask:NSEventMaskAny
+                     beforeEvent:[app currentEvent]];
+}
+
+void EventQueueOSX::extractEvent(Event& ev, const uint32_t eventId)
+{
+  const std::lock_guard lock(m_mutex);
+  auto nh = m_events.extract(eventId);
+  ev = nh.mapped();
 }
 
 } // namespace os
