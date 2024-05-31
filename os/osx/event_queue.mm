@@ -42,6 +42,9 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
       untilDate = [NSDate distantFuture];
     }
 
+    ev.setType(Event::None);
+    ev.setWindow(nullptr);
+
     NSApplication* app = [NSApplication sharedApplication];
     if (!app)
       return;
@@ -66,8 +69,6 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
           [app.keyWindow.contentView keyDown:event];
         }
         else if (event.type == NSEventTypeApplicationDefined) {
-          ev.setType(Event::None);
-          ev.setWindow(nullptr);
           if (!m_events.try_pop(ev)) {
             EV_TRACE("EV: Missing event! (%d)", [event subtype]);
           }
