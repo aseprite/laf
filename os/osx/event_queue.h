@@ -13,8 +13,6 @@
 #include "os/event.h"
 #include "os/event_queue.h"
 
-#include <atomic>
-
 namespace os {
 
 class EventQueueOSX : public EventQueue {
@@ -29,7 +27,8 @@ private:
   void wakeUpQueue();
 
   base::concurrent_queue<Event> m_events;
-  std::atomic<bool> m_sleeping;
+  mutable std::mutex m_mutex;
+  bool m_sleeping;
 };
 
 using EventQueueImpl = EventQueueOSX;
