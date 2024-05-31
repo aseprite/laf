@@ -68,10 +68,8 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
         else if (event.type == NSEventTypeApplicationDefined) {
           ev.setType(Event::None);
           ev.setWindow(nullptr);
-          const std::lock_guard lock(m_mutex);
-          if (!m_events.empty()) {
-            ev = m_events.front();
-            m_events.pop_front();
+          if (!m_events.try_pop(ev)) {
+            EV_TRACE("EV: Missing event! (%d)", [event subtype]);
           }
           return;
         }
@@ -87,13 +85,11 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
 
 void EventQueueOSX::queueEvent(const Event& ev)
 {
-  const std::lock_guard lock(m_mutex);
-
   NSApplication* app = [NSApplication sharedApplication];
   if (!app)
     return;
 
-  m_events.push_back(ev);
+  m_events.push(ev);
   [app postEvent:[NSEvent otherEventWithType:NSApplicationDefined
                                     location:NSZeroPoint
                                modifierFlags:0
@@ -108,7 +104,6 @@ void EventQueueOSX::queueEvent(const Event& ev)
 
 void EventQueueOSX::clearEvents()
 {
-  const std::lock_guard lock(m_mutex);
   m_events.clear();
 
   NSApplication* app = [NSApplication sharedApplication];

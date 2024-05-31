@@ -9,11 +9,9 @@
 #define OS_OSX_EVENT_QUEUE_INCLUDED
 #pragma once
 
+#include "base/concurrent_queue.h"
 #include "os/event.h"
 #include "os/event_queue.h"
-
-#include <queue>
-#include <mutex>
 
 namespace os {
 
@@ -26,8 +24,7 @@ public:
   void clearEvents() override;
 
 private:
-  mutable std::mutex m_mutex;
-  std::deque<os::Event> m_events;
+  base::concurrent_queue<Event> m_events;
 };
 
 using EventQueueImpl = EventQueueOSX;
