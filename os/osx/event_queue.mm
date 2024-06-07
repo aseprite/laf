@@ -74,31 +74,38 @@ void EventQueueOSX::getEvent(Event& ev, double timeout)
       }
     } while (event);
 
-    m_mutex.lock();
-    if (!m_events.try_pop(ev)) {
+    {
+      // Note that we don't use the try_lock because we can wait for
+      // the lock, since there is no long running functions that might get the
+      // lock for a long time.
+      const std::lock_guard lock(m_mutex);
+      if (!m_events.empty()) {
+        ev = m_events.front();
+        m_events.pop_front();
+        return;
+      }
+
       if (timeout == kWithoutTimeout)
         EV_TRACE("EV: Waiting for events\n");
 
       // Wait until there is a Cocoa event in queue
       m_sleeping = true;
-      m_mutex.unlock();
-      event = [app nextEventMatchingMask:NSEventMaskAny
-                               untilDate:untilDate
-                                  inMode:NSDefaultRunLoopMode
-                                 dequeue:YES];
-      m_mutex.lock();
-      m_sleeping = false;
-      m_mutex.unlock();
-
-      if (event) {
-        EV_TRACE("EV: Event received!\n");
-        goto retry;
-      }
-      else {
-        EV_TRACE("EV: Timeout!");
-      }
     }
+    event = [app nextEventMatchingMask:NSEventMaskAny
+                             untilDate:untilDate
+                                inMode:NSDefaultRunLoopMode
+                               dequeue:YES];
+    m_mutex.lock();
+    m_sleeping = false;
     m_mutex.unlock();
+
+    if (event) {
+      EV_TRACE("EV: Event received!\n");
+      goto retry;
+    }
+    else {
+      EV_TRACE("EV: Timeout!");
+    }
   }
 }
 
@@ -117,7 +124,7 @@ void EventQueueOSX::queueEvent(const Event& ev)
     wakeUpQueue();
     m_sleeping = false;
   }
-  m_events.push(ev);
+  m_events.push_back(ev);
 }
 
 void EventQueueOSX::wakeUpQueue()
@@ -142,6 +149,7 @@ void EventQueueOSX::wakeUpQueue()
 
 void EventQueueOSX::clearEvents()
 {
+  const std::lock_guard lock(m_mutex);
   m_events.clear();
 }
 

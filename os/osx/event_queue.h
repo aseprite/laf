@@ -9,9 +9,11 @@
 #define OS_OSX_EVENT_QUEUE_INCLUDED
 #pragma once
 
-#include "base/concurrent_queue.h"
 #include "os/event.h"
 #include "os/event_queue.h"
+
+#include <mutex>
+#include <queue>
 
 namespace os {
 
@@ -26,7 +28,7 @@ public:
 private:
   void wakeUpQueue();
 
-  base::concurrent_queue<Event> m_events;
+  std::deque<Event> m_events;
   mutable std::mutex m_mutex;
   bool m_sleeping;
 };
