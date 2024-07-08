@@ -10,6 +10,8 @@
 
 #include <cstdio>
 
+#include "mem_utils.h"
+
 namespace base {
 
 // Reads a WORD (16 bits) using little-endian byte ordering.
@@ -114,7 +116,7 @@ float fgetf(FILE* file)
 
   // Little endian.
   int v = ((b4 << 24) | (b3 << 16) | (b2 << 8) | b1);
-  return *reinterpret_cast<float*>(&v);
+  return *copy_reinterpret_cast<float*>(&v);
 }
 
 // Reads a 64-bit double-precision floating point number using
@@ -156,7 +158,7 @@ double fgetd(FILE* file)
                  ((long long)b3 << 16) |
                  ((long long)b2 << 8) |
                  (long long)b1);
-  return *reinterpret_cast<double*>(&v);
+  return *copy_reinterpret_cast<double*>(&v);
 }
 
 // Writes a word using little-endian byte ordering.
@@ -231,7 +233,7 @@ int fputq(long long l, FILE* file)
 // Returns 0 in success or -1 in error
 int fputf(float l, FILE* file)
 {
-  const int b = *(reinterpret_cast<int*>(&l));
+  const int b = *(copy_reinterpret_cast<int*>(&l));
   int b1, b2, b3, b4;
 
   // Little endian.
@@ -254,7 +256,7 @@ int fputf(float l, FILE* file)
 // Returns 0 in success or -1 in error
 int fputd(double l, FILE* file)
 {
-  const long long b = *(reinterpret_cast<long long*>(&l));
+  const long long b = *(copy_reinterpret_cast<long long*>(&l));
   int b1, b2, b3, b4, b5, b6, b7, b8;
 
   // Little endian.
