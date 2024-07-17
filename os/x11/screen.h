@@ -9,51 +9,33 @@
 #pragma once
 
 #include "os/screen.h"
+#include "os/x11/monitor.h"
 #include "os/x11/x11.h"
 
-#include <X11/Xatom.h>
+#include <X11/extensions/Xrandr.h>
 
 namespace os {
 
 class ScreenX11 : public Screen {
 public:
-  ScreenX11(int screen) {
-    auto x11 = X11::instance();
-    auto x11display = x11->display();
+  ScreenX11(int monitorNum) : m_monitorNum(monitorNum) {
+    MonitorsX11* monitors = X11::instance()->monitors();
+    const XRRMonitorInfo& monitor = monitors->monitor(monitorNum);
 
-    m_bounds.w = XDisplayWidth(x11display, screen);
-    m_bounds.h = XDisplayHeight(x11display, screen);
+    m_bounds.x = monitor.x;
+    m_bounds.y = monitor.y;
+    m_bounds.w = monitor.width;
+    m_bounds.h = monitor.height;
+    // Xorg doesn't really provide a way to find workarea per monitor :/
+    m_workarea.x = monitor.x;
+    m_workarea.y = monitor.y;
+    m_workarea.w = monitor.width;
+    m_workarea.h = monitor.height;
 
-    ::Window root = XDefaultRootWindow(x11display);
-    Atom _NET_WORKAREA = XInternAtom(x11display, "_NET_WORKAREA", False);
-
-    Atom actual_type;
-    int actual_format;
-    unsigned long nitems;
-    unsigned long bytes_after;
-    unsigned long* prop;
-
-    int res = XGetWindowProperty(x11display, root,
-                                 _NET_WORKAREA,
-                                 0, 4,
-                                 False, XA_CARDINAL,
-                                 &actual_type, &actual_format,
-                                 &nitems, &bytes_after,
-                                 (unsigned char**)&prop);
-    if (res == Success && nitems == 4) {
-      m_workarea.x = prop[0];
-      m_workarea.y = prop[1];
-      m_workarea.w = prop[2];
-      m_workarea.h = prop[3];
-      XFree(prop);
-    }
-    else {
-      m_workarea = m_bounds;
-    }
+    m_isPrimary = monitor.primary;
   }
-  bool isMainScreen() const override {
-    return (m_screen == XDefaultScreen(X11::instance()->display()));
-  }
+
+  bool isMainScreen() const override { return m_isPrimary; }
   gfx::Rect bounds() const override { return m_bounds; }
   gfx::Rect workarea() const override { return m_workarea; }
   os::ColorSpaceRef colorSpace() const override {
@@ -61,10 +43,11 @@ public:
     return os::instance()->makeColorSpace(gfx::ColorSpace::MakeSRGB());
   }
   void* nativeHandle() const override {
-    return reinterpret_cast<void*>(m_screen);
+    return reinterpret_cast<void*>(m_monitorNum);
   }
 private:
-  int m_screen;
+  int m_monitorNum;
+  bool m_isPrimary;
   gfx::Rect m_bounds;
   gfx::Rect m_workarea;
 };

@@ -447,7 +447,7 @@ WindowX11::~WindowX11()
 
 os::ScreenRef WindowX11::screen() const
 {
-  return os::make_ref<ScreenX11>(DefaultScreen(m_display));
+  return os::instance()->mainScreen();
 }
 
 os::ColorSpaceRef WindowX11::colorSpace() const

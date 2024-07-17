@@ -14,7 +14,9 @@
 #include "os/x11/screen.h"
 #include "os/x11/x11.h"
 
+#include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/extensions/Xrandr.h>
 
 namespace os {
 
@@ -25,6 +27,7 @@ public:
   void setTabletOptions(const TabletOptions& options) override {
     m_tabletOptions = options;
   }
+
   TabletOptions tabletOptions() const override {
     return m_tabletOptions;
   }
@@ -81,14 +84,23 @@ public:
   }
 
   ScreenRef mainScreen() override {
-    return make_ref<ScreenX11>(
-      XDefaultScreen(X11::instance()->display()));
+    MonitorsX11* monitors = X11::instance()->monitors();
+    const int numMonitors = monitors->numMonitors();
+
+    // we have to search for the primary monitor
+    for (int monitor=0; monitor<numMonitors; monitor++) {
+      if (monitors->monitor(monitor).primary) {
+        return make_ref<ScreenX11>(monitor);
+      }
+    }
+
+    return nullptr;
   }
 
   void listScreens(ScreenList& list) override {
-    const int nscreen = XScreenCount(X11::instance()->display());
-    for (int screen=0; screen<nscreen; screen++)
-      list.push_back(make_ref<ScreenX11>(screen));
+    const int numMonitors = X11::instance()->monitors()->numMonitors();
+    for (int monitor=0; monitor<numMonitors; monitor++)
+      list.push_back(make_ref<ScreenX11>(monitor));
   }
 
 private:
