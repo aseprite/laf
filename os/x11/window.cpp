@@ -447,7 +447,11 @@ WindowX11::~WindowX11()
 
 os::ScreenRef WindowX11::screen() const
 {
-  return os::instance()->mainScreen();
+  ScreenRef nearestMonitor = X11::instance()->monitors()->nearestMonitorOf(frame());
+  if (nearestMonitor)
+    return nearestMonitor;
+  else
+    return os::instance()->mainScreen();
 }
 
 os::ColorSpaceRef WindowX11::colorSpace() const

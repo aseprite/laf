@@ -89,7 +89,7 @@ public:
 
     // we have to search for the primary monitor
     for (int monitor=0; monitor<numMonitors; monitor++) {
-      if (monitors->monitor(monitor).primary) {
+      if (monitors->monitorInfo(monitor).primary) {
         return make_ref<ScreenX11>(monitor);
       }
     }
