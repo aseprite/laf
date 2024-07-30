@@ -409,6 +409,77 @@ public:
     return *this;
   }
 
+  // Slices vertically this Rect along the provided px coordinate.
+  // This rect is the right slice and the returned rect is the left slice.
+  RectT sliceV(T px) {
+    if (px < x)
+      return RectT<T>();
+
+    if (px > x2()) {
+      auto leftSlice = *this;
+      x = y = w = h = 0;
+      return leftSlice;
+    }
+
+    gfx::RectT<T> leftSlice = RectT<T>(x, y, px - x, h);
+
+    w = x2() - px;
+    x = px;
+    return leftSlice;
+  }
+
+  // Slices horizontally this Rect along the provided py coordinate.
+  // This rect is the bottom slice and the returned rect is the top slice.
+  RectT sliceH(T py) {
+    if (py < y)
+      return RectT<T>();
+
+    if (py > y2()) {
+      auto topSlice = *this;
+      x = y = w = h = 0;
+      return topSlice;
+    }
+
+    auto topSlice = RectT<T>(x, y, w, py - y);
+
+    h = y2() - py;
+    y = py;
+    return topSlice;
+  }
+
+  // Slices this rect in nine pieces and returns all the rects in the slices
+  // output array. The center rect defines the relative coordinates where the
+  // cuts are going to be made:
+  //
+  //     this (x, y, w=23, h=7)       slices output
+  //     +---------------------+      +--------+-----+------+
+  //     | center (9,2,w=7,h=3)|      |   [0]  | [1] |  [2] |
+  //     |        +-----+      |      +--------+-----+------+
+  //     |        |     |      |  =>  |   [3]  | [4] |  [5] |
+  //     |        +-----+      |      +--------+-----+------+
+  //     |                     |      |   [6]  | [7] |  [8] |
+  //     +---------------------+      +--------+-----+------+
+  //
+  // Note that this method doesn't modify this rect.
+  void nineSlice(RectT<T> center, RectT<T> slices[9]) const {
+    RectT<T> remaining = *this;
+    gfx::RectT<T> left = remaining.sliceV(x + center.x);
+    RectT<T> middle = remaining.sliceV(x + center.x2());
+    RectT<T> right = remaining;
+
+    slices[0] = left.sliceH(y + center.y);
+    slices[1] = middle.sliceH(y + center.y);
+    slices[2] = right.sliceH(y + center.y);
+
+    slices[3] = left.sliceH(y + center.y2());
+    slices[4] = middle.sliceH(y + center.y2());
+    slices[5] = right.sliceH(y + center.y2());
+
+    slices[6] = left;
+    slices[7] = middle;
+    slices[8] = right;
+  }
+
 };
 
 using Rect = RectT<int>;
