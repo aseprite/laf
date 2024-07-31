@@ -68,33 +68,29 @@ TEST(Rect, Floor)
 TEST(Rect, SliceV)
 {
   const int x = 3, y = 4;
-  auto r = gfx::Rect(x, y, 5, 7);
-  auto l = r.sliceV(x);
+  gfx::Rect l, r;
+  auto rect = gfx::Rect(x, y, 5, 7);
+  rect.sliceV(x, l, r);
   EXPECT_EQ(gfx::Rect(x,y,0,7), l);
   EXPECT_EQ(gfx::Rect(x,y,5,7), r);
 
-  r = gfx::Rect(x, y, 5, 7);
-  l = r.sliceV(x-1);
+  rect.sliceV(x-1, l, r);
   EXPECT_EQ(gfx::Rect(0,0,0,0), l);
   EXPECT_EQ(gfx::Rect(x,y,5,7), r);
 
-  r = gfx::Rect(x, y, 5, 7);
-  l = r.sliceV(x+1);
+  rect.sliceV(x+1, l, r);
   EXPECT_EQ(gfx::Rect(x,y,1,7), l);
   EXPECT_EQ(gfx::Rect(x+1,y,4,7), r);
 
-  r = gfx::Rect(x, y, 5, 7);
-  l = r.sliceV(x+4);
+  rect.sliceV(x+4, l, r);
   EXPECT_EQ(gfx::Rect(x,y,4,7), l);
   EXPECT_EQ(gfx::Rect(x+4,y,1,7), r);
 
-  r = gfx::Rect(x, y, 5, 7);
-  l = r.sliceV(x+5);
+  rect.sliceV(x+5, l, r);
   EXPECT_EQ(gfx::Rect(x,y,5,7), l);
   EXPECT_EQ(gfx::Rect(x+5,y,0,7), r);
 
-  r = gfx::Rect(x, y, 5, 7);
-  l = r.sliceV(x+6);
+  rect.sliceV(x+6, l, r);
   EXPECT_EQ(gfx::Rect(x,y,5,7), l);
   EXPECT_EQ(gfx::Rect(0,0,0,0), r);
 }
@@ -102,33 +98,29 @@ TEST(Rect, SliceV)
 TEST(Rect, SliceH)
 {
   const int x = 3, y = 4;
-  auto b = gfx::Rect(x, y, 5, 7);
-  auto t = b.sliceH(y);
+  gfx::Rect t, b;
+  auto rect = gfx::Rect(x, y, 5, 7);
+  rect.sliceH(y, t, b);
   EXPECT_EQ(gfx::Rect(x,y,5,0), t);
   EXPECT_EQ(gfx::Rect(x,y,5,7), b);
 
-  b = gfx::Rect(x, y, 5, 7);
-  t = b.sliceH(y-1);
+  rect.sliceH(y-1, t, b);
   EXPECT_EQ(gfx::Rect(0,0,0,0), t);
   EXPECT_EQ(gfx::Rect(x,y,5,7), b);
 
-  b = gfx::Rect(x, y, 5, 7);
-  t = b.sliceH(y+1);
+  rect.sliceH(y+1, t, b);
   EXPECT_EQ(gfx::Rect(x,y,5,1), t);
   EXPECT_EQ(gfx::Rect(x,y+1,5,6), b);
 
-  b = gfx::Rect(x, y, 5, 7);
-  t = b.sliceH(y+6);
+  rect.sliceH(y+6, t, b);
   EXPECT_EQ(gfx::Rect(x,y,5,6), t);
   EXPECT_EQ(gfx::Rect(x,y+6,5,1), b);
 
-  b = gfx::Rect(x, y, 5, 7);
-  t = b.sliceH(y+7);
+  rect.sliceH(y+7, t, b);
   EXPECT_EQ(gfx::Rect(x,y,5,7), t);
   EXPECT_EQ(gfx::Rect(x,y+7,5,0), b);
 
-  b = gfx::Rect(x, y, 5, 7);
-  t = b.sliceH(y+8);
+  rect.sliceH(y+8, t, b);
   EXPECT_EQ(gfx::Rect(x,y,5,7), t);
   EXPECT_EQ(gfx::Rect(0,0,0,0), b);
 }
@@ -136,12 +128,12 @@ TEST(Rect, SliceH)
 TEST(Rect, NineSlice)
 {
   const int x = 3, y = 4;
-  auto r = gfx::Rect(x, y, 6, 6);
+  auto rect = gfx::Rect(x, y, 6, 6);
   gfx::Rect slices[9];
 
   // Slice using an inner rect.
-  r.nineSlice(gfx::Rect(3, 3, 2, 2), slices);
-  EXPECT_EQ(gfx::Rect(x,y,6,6), r);
+  rect.nineSlice(gfx::Rect(3, 3, 2, 2), slices);
+  EXPECT_EQ(gfx::Rect(x,y,6,6), rect);
   EXPECT_EQ(gfx::Rect(x  ,y  ,3,3), slices[0]);
   EXPECT_EQ(gfx::Rect(x+3,y  ,2,3), slices[1]);
   EXPECT_EQ(gfx::Rect(x+5,y  ,1,3), slices[2]);
@@ -153,8 +145,8 @@ TEST(Rect, NineSlice)
   EXPECT_EQ(gfx::Rect(x+5,y+5,1,1), slices[8]);
 
   // Slice using a center rect with the same size as the rect being sliced.
-  r.nineSlice(gfx::Rect(0, 0, 6, 6), slices);
-  EXPECT_EQ(gfx::Rect(x,y,6,6), r);
+  rect.nineSlice(gfx::Rect(0, 0, 6, 6), slices);
+  EXPECT_EQ(gfx::Rect(x,y,6,6), rect);
   EXPECT_EQ(gfx::Rect(x  ,y  ,0,0), slices[0]);
   EXPECT_EQ(gfx::Rect(x  ,y  ,6,0), slices[1]);
   EXPECT_EQ(gfx::Rect(x+6,y  ,0,0), slices[2]);
@@ -166,8 +158,8 @@ TEST(Rect, NineSlice)
   EXPECT_EQ(gfx::Rect(x+6,y+6,0,0), slices[8]);
 
   // Slice using an outer rect.
-  r.nineSlice(gfx::Rect(-1, -1, 8, 8), slices);
-  EXPECT_EQ(gfx::Rect(x,y,6,6), r);
+  rect.nineSlice(gfx::Rect(-1, -1, 8, 8), slices);
+  EXPECT_EQ(gfx::Rect(x,y,6,6), rect);
   EXPECT_EQ(gfx::Rect(0,0,0,0), slices[0]);
   EXPECT_EQ(gfx::Rect(0,0,0,0), slices[1]);
   EXPECT_EQ(gfx::Rect(0,0,0,0), slices[2]);

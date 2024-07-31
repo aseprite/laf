@@ -410,41 +410,41 @@ public:
   }
 
   // Slices vertically this Rect along the provided px coordinate.
-  // This rect is the right slice and the returned rect is the left slice.
-  RectT sliceV(T px) {
-    if (px < x)
-      return RectT<T>();
-
-    if (px > x2()) {
-      auto leftSlice = *this;
-      x = y = w = h = 0;
-      return leftSlice;
+  // Sets the left and right rects in the references of the same name.
+  const RectT& sliceV(T px, RectT& left, RectT& right) const {
+    if (px < x) {
+      left = RectT();
+      right = *this;
+    }
+    else if (px > x2()) {
+      left = *this;
+      right = RectT();
+    }
+    else {
+      left = RectT(x, y, px - x, h);
+      right = RectT(px, y, x2() - px, h);
     }
 
-    gfx::RectT<T> leftSlice = RectT<T>(x, y, px - x, h);
-
-    w = x2() - px;
-    x = px;
-    return leftSlice;
+    return *this;
   }
 
   // Slices horizontally this Rect along the provided py coordinate.
-  // This rect is the bottom slice and the returned rect is the top slice.
-  RectT sliceH(T py) {
-    if (py < y)
-      return RectT<T>();
-
-    if (py > y2()) {
-      auto topSlice = *this;
-      x = y = w = h = 0;
-      return topSlice;
+  // Sets the top and bottom rects in the references of the same name.
+  const RectT& sliceH(T py, RectT& top, RectT& bottom) const {
+    if (py < y) {
+      top = RectT();
+      bottom = *this;
+    }
+    else if (py > y2()) {
+      top = *this;
+      bottom = RectT();
+    }
+    else {
+      top = RectT(x, y, w, py - y);
+      bottom = RectT(x, py, w, y2() - py);
     }
 
-    auto topSlice = RectT<T>(x, y, w, py - y);
-
-    h = y2() - py;
-    y = py;
-    return topSlice;
+    return *this;
   }
 
   // Slices this rect in nine pieces and returns all the rects in the slices
@@ -460,24 +460,28 @@ public:
   //     |                     |      |   [6]  | [7] |  [8] |
   //     +---------------------+      +--------+-----+------+
   //
-  // Note that this method doesn't modify this rect.
-  void nineSlice(RectT<T> center, RectT<T> slices[9]) const {
-    RectT<T> remaining = *this;
-    gfx::RectT<T> left = remaining.sliceV(x + center.x);
-    RectT<T> middle = remaining.sliceV(x + center.x2());
-    RectT<T> right = remaining;
+  const RectT& nineSlice(const RectT& center, RectT slices[9]) const {
+    gfx::RectT<T> left, middle, right;
 
-    slices[0] = left.sliceH(y + center.y);
-    slices[1] = middle.sliceH(y + center.y);
-    slices[2] = right.sliceH(y + center.y);
+    {
+      gfx::RectT<T> remaining;
+      this->sliceV(x + center.x, left, remaining);
+      remaining.sliceV(x + center.x2(), middle, right);
+    }
 
-    slices[3] = left.sliceH(y + center.y2());
-    slices[4] = middle.sliceH(y + center.y2());
-    slices[5] = right.sliceH(y + center.y2());
+    left  .sliceH(y + center.y   , slices[0], left);
+    middle.sliceH(y + center.y   , slices[1], middle);
+    right .sliceH(y + center.y   , slices[2], right);
+
+    left  .sliceH(y + center.y2(), slices[3], left);
+    middle.sliceH(y + center.y2(), slices[4], middle);
+    right .sliceH(y + center.y2(), slices[5], right);
 
     slices[6] = left;
     slices[7] = middle;
     slices[8] = right;
+
+    return *this;
   }
 
 };
