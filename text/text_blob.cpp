@@ -69,10 +69,12 @@ gfx::RectF TextBlob::RunInfo::getGlyphBounds(const size_t i) const
   if (bounds.isEmpty()) {
     FontMetrics metrics;
     font->metrics(&metrics);
-    bounds.w = metrics.avgCharWidth;
-    bounds.h = -metrics.capHeight;
+    // avgCharWidth can be 0, so we grab the next most useful thing, the height
+    bounds.w = metrics.avgCharWidth > 0 ? metrics.avgCharWidth : metrics.xHeight;
+    bounds.h = 1.0;
   }
 
+  ASSERT(!bounds.isEmpty());
   bounds.offset(positions[i].x,
                 positions[i].y);
   if (offsets) {

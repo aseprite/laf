@@ -34,7 +34,8 @@ public:
                    const gfx::PointF& offset,
                    TextBlob::RunHandler* subHandler)
     : m_builder(utf8Text, os::to_skia(offset))
-    , m_subHandler(subHandler) { }
+    , m_subHandler(subHandler)
+    , m_buffer() { }
 
   sk_sp<SkTextBlob> makeBlob() {
     return m_builder.makeBlob();
@@ -131,17 +132,33 @@ TextBlobRef SkiaTextBlob::MakeWithShaper(
   ASSERT(dynamic_cast<SkiaFont*>(font.get()));
 
   SkFont skFont = static_cast<SkiaFont*>(font.get())->skFont();
+  auto skFontMgr = static_cast<SkiaFontMgr*>(fontMgr.get())->skFontMgr();
   sk_sp<SkTextBlob> textBlob;
   gfx::RectF bounds;
-  if (auto shaper = SkShaper::Make(
-        static_cast<SkiaFontMgr*>(fontMgr.get())->skFontMgr())) {
+  if (auto shaper = SkShaper::Make(skFontMgr)) {
     ShaperRunHandler shaperHandler(text.c_str(), { 0, 0 }, handler);
-    shaper->shape(
-      text.c_str(), text.size(),
-      skFont,
-      true,
-      std::numeric_limits<float>::max(),
-      &shaperHandler);
+
+    auto bidiRun = SkShaper::MakeBiDiRunIterator(text.c_str(), text.size(), 0xfe);
+    constexpr SkFourByteTag tag = SkSetFourByteTag('Z', 'y', 'y', 'y');
+    auto scriptRun = SkShaper::MakeScriptRunIterator(text.c_str(), text.size(), tag);
+    auto languageRun = SkShaper::MakeStdLanguageRunIterator(text.c_str(), text.size());
+    auto fontRun = SkShaper::MakeFontMgrRunIterator(text.c_str(),
+                                                    text.size(),
+                                                    skFont,
+                                                    skFontMgr,
+                                                    "Arial", // Fallback
+                                                    SkFontStyle::Normal(),
+                                                    &*languageRun);
+
+    shaper->shape(text.c_str(),
+                  text.size(),
+                  *fontRun,
+                  *bidiRun,
+                  *scriptRun,
+                  *languageRun,
+                  std::numeric_limits<float>::max(),
+                  &shaperHandler);
+
     textBlob = shaperHandler.makeBlob();
     bounds = shaperHandler.bounds();
   }
