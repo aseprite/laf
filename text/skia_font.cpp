@@ -71,11 +71,13 @@ int SkiaFont::height() const
 
 int SkiaFont::textLength(const std::string& str) const
 {
-  return m_skFont.measureText(
-    str.c_str(),
-    str.size(),
-    SkTextEncoding::kUTF8,
-    nullptr);
+  return std::ceil(
+    m_skFont.measureText(
+      str.c_str(),
+      str.size(),
+      SkTextEncoding::kUTF8,
+      nullptr)
+  );
 }
 
 float SkiaFont::measureText(const std::string& str,
