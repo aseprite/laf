@@ -59,12 +59,12 @@ namespace text {
 
     class RunHandler {
     public:
-      virtual ~RunHandler() { }
+      virtual ~RunHandler() = default;
       virtual void commitRunBuffer(RunInfo& info) = 0;
     };
 
-    TextBlob(const gfx::RectF& bounds) : m_bounds(bounds) { }
-    virtual ~TextBlob() { }
+    explicit TextBlob(const gfx::RectF& bounds) : m_bounds(bounds) {}
+    virtual ~TextBlob() = default;
 
     // Returns exact bounds that are required to draw this TextBlob.
     gfx::RectF bounds();

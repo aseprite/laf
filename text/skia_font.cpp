@@ -124,9 +124,8 @@ glyph_t SkiaFont::codePointToGlyph(codepoint_t codepoint) const
 
 gfx::RectF SkiaFont::getGlyphBounds(glyph_t glyph) const
 {
-  float widths;
   SkRect bounds;
-  m_skFont.getWidthsBounds(&glyph, 1, &widths, &bounds, nullptr);
+  m_skFont.getWidthsBounds(&glyph, 1, nullptr, &bounds, nullptr);
   return os::from_skia(bounds);
 }
 

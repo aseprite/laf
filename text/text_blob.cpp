@@ -11,6 +11,7 @@
 #include "text/text_blob.h"
 
 #include "gfx/rect.h"
+#include "gfx/size.h"
 #include "text/font.h"
 #include "text/font_metrics.h"
 #include "text/sprite_text_blob.h"
@@ -65,21 +66,17 @@ gfx::RectF TextBlob::RunInfo::getGlyphBounds(const size_t i) const
 
   gfx::RectF bounds = font->getGlyphBounds(glyphs[i]);
 
-  // Get bounds of whitespace
+  // Get bounds of whitespace from a space glyph.
   if (bounds.isEmpty()) {
-    FontMetrics metrics;
-    font->metrics(&metrics);
-    // avgCharWidth can be 0, so we grab the next most useful thing, the height
-    bounds.w = metrics.avgCharWidth > 0 ? metrics.avgCharWidth : metrics.xHeight;
-    bounds.h = 1.0;
+    auto glyph = font->getGlyphBounds(' ');
+    bounds.w = glyph.w - glyph.x;
+    bounds.h = glyph.h - glyph.y;
   }
 
   ASSERT(!bounds.isEmpty());
-  bounds.offset(positions[i].x,
-                positions[i].y);
+  bounds.offset(positions[i]);
   if (offsets) {
-    bounds.offset(offsets[i].x,
-                  offsets[i].y);
+    bounds.offset(offsets[i]);
   }
 
   // Add global "point" offset to the bounds.
