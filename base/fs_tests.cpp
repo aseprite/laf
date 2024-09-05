@@ -411,6 +411,65 @@ TEST(FS, CopyFiles)
   EXPECT_EQ(data, read_file_content(dst));
 }
 
+TEST(FS, ListFiles)
+{
+  // Prepare files
+  make_directory("a");
+  EXPECT_TRUE(is_directory("a"));
+
+  make_directory("a/b");
+  EXPECT_TRUE(is_directory("a/b"));
+  make_directory("a/c");
+  EXPECT_TRUE(is_directory("a/b"));
+
+  write_file_content("a/d", (uint8_t*)"123", 3);
+  EXPECT_TRUE(is_file("a/d"));
+
+  write_file_content("a/e", (uint8_t*)"321", 3);
+  EXPECT_TRUE(is_file("a/e"));
+
+  // Test normal find with asterisk match
+  EXPECT_TRUE(list_files("non-existent-folder").empty());
+  EXPECT_EQ(list_files("a").size(), 4);
+
+  auto dirs = list_files("a", ItemType::Directories);
+  EXPECT_EQ(dirs.size(), 2);
+  EXPECT_TRUE(std::find(dirs.begin(), dirs.end(), "b") != dirs.end());
+  EXPECT_TRUE(std::find(dirs.begin(), dirs.end(), "c") != dirs.end());
+
+  auto files = list_files("a", ItemType::Files);
+  EXPECT_EQ(files.size(), 2);
+  EXPECT_TRUE(std::find(files.begin(), files.end(), "d") != files.end());
+  EXPECT_TRUE(std::find(files.begin(), files.end(), "e") != files.end());
+
+  // Test pattern matching
+  make_directory("a/c-match-me");
+  EXPECT_TRUE(is_directory("a/c-match-me"));
+
+  EXPECT_EQ(list_files("a", ItemType::Directories, "c-*-me").size(), 1);
+  EXPECT_EQ(list_files("a", ItemType::Directories, "c-match-me").size(), 1);
+  EXPECT_EQ(list_files("a", ItemType::Files, "c-*-me").size(), 0);
+
+  write_file_content("a/c-alsomatch-me", (uint8_t*)"321", 3);
+  EXPECT_TRUE(is_file("a/c-alsomatch-me"));
+
+  EXPECT_EQ(list_files("a", ItemType::Files, "c-*-me").size(), 1);
+  EXPECT_EQ(list_files("a", ItemType::Files, "c-alsomatch-me").size(), 1);
+  EXPECT_EQ(list_files("a", ItemType::All, "c-*").size(), 2);
+  EXPECT_EQ(list_files("a", ItemType::All, "*-me").size(), 2);
+  EXPECT_EQ(list_files("a", ItemType::All, "*match*").size(), 2);
+  EXPECT_EQ(list_files("a", ItemType::All).size(), 6);
+
+  // Remove files
+  delete_file("a/e");
+  delete_file("a/d");
+  delete_file("a/c-alsomatch-me");
+  remove_directory("a/c-match-me");
+  remove_directory("a/c");
+  remove_directory("a/b");
+  remove_directory("a");
+}
+
 int main(int argc, char** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

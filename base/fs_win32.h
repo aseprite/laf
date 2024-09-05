@@ -180,19 +180,40 @@ std::string get_absolute_path(const std::string& path)
   return to_utf8(buffer);
 }
 
-paths list_files(const std::string& path)
+paths list_files(const std::string& path,
+                       ItemType filter,
+                       const std::string& match)
 {
   WIN32_FIND_DATA fd;
   paths files;
-  HANDLE handle = FindFirstFile(base::from_utf8(base::join_path(path, "*")).c_str(), &fd);
-  if (handle) {
-    do {
-      std::string filename = base::to_utf8(fd.cFileName);
-      if (filename != "." && filename != "..")
-        files.push_back(filename);
-    } while (FindNextFile(handle, &fd));
-    FindClose(handle);
-  }
+  HANDLE handle = FindFirstFileEx(
+    base::from_utf8(base::join_path(path, match)).c_str(),
+    FindExInfoBasic,
+    &fd,
+    (filter == ItemType::Directories) ? FindExSearchLimitToDirectories :
+                                             FindExSearchNameMatch,
+    NULL,
+    0);
+
+  if (handle == INVALID_HANDLE_VALUE)
+    return files;
+
+  do {
+    if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+      if (filter == ItemType::Files)
+        continue;
+
+      if (lstrcmpW(fd.cFileName, L".") == 0 ||
+          lstrcmpW(fd.cFileName, L"..") == 0)
+        continue;
+    }
+    else if (filter == ItemType::Directories)
+      continue;
+
+    files.push_back(base::to_utf8(fd.cFileName));
+  } while (FindNextFile(handle, &fd));
+
+  FindClose(handle);
   return files;
 }
 

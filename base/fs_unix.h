@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <fnmatch.h>
 
 #include <cerrno>
 #include <climits>
@@ -229,20 +230,32 @@ std::string get_absolute_path(const std::string& path)
   return full;
 }
 
-paths list_files(const std::string& path)
+paths list_files(const std::string& path, ItemType filter, const std::string& match)
 {
   paths files;
   DIR* handle = opendir(path.c_str());
-  if (handle) {
-    dirent* item;
-    while ((item = readdir(handle)) != nullptr) {
-      std::string filename = item->d_name;
-      if (filename != "." && filename != "..")
-        files.push_back(filename);
-    }
+  if (!handle)
+    return files;
 
-    closedir(handle);
+  dirent* item;
+  while ((item = readdir(handle)) != nullptr) {
+    if (item->d_type == DT_DIR) {
+      if (filter == ItemType::Files)
+        continue;
+
+      if (strcmp(item->d_name, ".") == 0 || strcmp(item->d_name, "..") == 0)
+        continue;
+    }
+    else if (filter == ItemType::Directories)
+      continue;
+
+    if (fnmatch(match.c_str(), item->d_name, FNM_CASEFOLD) == FNM_NOMATCH)
+      continue;
+    
+    files.push_back(item->d_name);
   }
+
+  closedir(handle);
   return files;
 }
 

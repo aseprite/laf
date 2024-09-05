@@ -65,7 +65,20 @@ namespace base {
   // elements (is a normalized path).
   std::string get_absolute_path(const std::string& path);
 
-  paths list_files(const std::string& path);
+  // Item types that list_files() can be filtered by
+  enum class ItemType {
+      All,
+      Directories,
+      Files
+  };
+
+  // List all the items in a given path by default, two other parameters second parameters:
+  // filter can be use to distinguish between All items, directories and files.
+  // The name search can be used to match files by extension with something like "*.png" or by exact
+  // match without wildcards.
+  paths list_files(const std::string& path,
+                         ItemType filter = ItemType::All,
+                         const std::string& = "*");
 
   // Returns true if the given character is a valud path separator
   // (any of '\' or '/' characters).
