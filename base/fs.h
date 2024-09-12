@@ -77,8 +77,8 @@ namespace base {
   // The name search can be used to match files by extension with something like "*.png" or by exact
   // match without wildcards.
   paths list_files(const std::string& path,
-                         ItemType filter = ItemType::All,
-                         const std::string& = "*");
+                   ItemType filter = ItemType::All,
+                   const std::string& = "*");
 
   // Returns true if the given character is a valud path separator
   // (any of '\' or '/' characters).

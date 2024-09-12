@@ -181,8 +181,8 @@ std::string get_absolute_path(const std::string& path)
 }
 
 paths list_files(const std::string& path,
-                       ItemType filter,
-                       const std::string& match)
+                 ItemType filter,
+                 const std::string& match)
 {
   WIN32_FIND_DATA fd;
   paths files;
@@ -191,7 +191,7 @@ paths list_files(const std::string& path,
     FindExInfoBasic,
     &fd,
     (filter == ItemType::Directories) ? FindExSearchLimitToDirectories :
-                                             FindExSearchNameMatch,
+                                        FindExSearchNameMatch,
     NULL,
     0);
 
