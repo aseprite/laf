@@ -73,4 +73,15 @@ XInput* X11::xinput()
   return m_xinput.get();
 }
 
+MonitorsX11* X11::monitors()
+{
+  if (!m_monitors) {
+    // TODO: Use `XRRScreenChangeNotifyEvent` in the man page of Xrandr(3) to update this variable?
+    m_monitors = std::make_unique<MonitorsX11>();
+  }
+
+  return m_monitors.get();
+}
+
+
 } // namespace os
