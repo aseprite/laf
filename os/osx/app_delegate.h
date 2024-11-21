@@ -15,17 +15,20 @@
 #include <string>
 
 @interface NSApplicationOSX : NSApplication
-- (void)sendEvent:(NSEvent *)event;
+- (void)sendEvent:(NSEvent*)event;
 @end
 
-@interface AppDelegateOSX : NSObject<NSApplicationDelegate> {
+@interface AppDelegateOSX : NSObject <NSApplicationDelegate> {
   // Files that were already processed in the CLI, so we don't need to
   // generate a DropFiles event.
   std::set<std::string> m_cliFiles;
   bool m_isHidden;
+  NSMutableArray<NSWindow*>* m_floatingWindows;
 }
+
 - (id)init;
-- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender;
+- (NSApplicationTerminateReply)applicationShouldTerminate:
+  (NSApplication*)sender;
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)app;
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)applicationWillResignActive:(NSNotification*)notification;
@@ -39,6 +42,7 @@
 - (void)markCliFileAsProcessed:(const std::string&)fn;
 - (void)resetCliFiles;
 - (BOOL)isHidden;
+- (NSMutableArray<NSWindow*>*)floatingWindows;
 @end
 
 #endif

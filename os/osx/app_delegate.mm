@@ -69,6 +69,7 @@
 {
   if (self = [super init]) {
     m_isHidden = false;
+    m_floatingWindows = [NSMutableArray array];
   }
   return self;
 }
@@ -92,6 +93,9 @@
 
 - (void)applicationWillResignActive:(NSNotification*)notification
 {
+  for (NSWindow* floatingWindow in self.floatingWindows)
+    floatingWindow.level = NSNormalWindowLevel;
+
   NSEvent* event = [NSApp currentEvent];
   if (event != nil)
     [ViewOSX updateKeyFlags:event];
@@ -102,6 +106,9 @@
   NSEvent* event = [NSApp currentEvent];
   if (event != nil)
     [ViewOSX updateKeyFlags:event];
+
+  for (NSWindow* floatingWindow in self.floatingWindows)
+    floatingWindow.level = NSFloatingWindowLevel;
 }
 
 - (void)applicationDidHide:(NSNotification*)notification
@@ -168,6 +175,11 @@
 - (BOOL)isHidden
 {
   return m_isHidden;
+}
+
+- (NSMutableArray<NSWindow*>*) floatingWindows
+{
+  return m_floatingWindows;
 }
 
 @end
