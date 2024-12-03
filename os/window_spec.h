@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2019-2021  Igara Studio S.A.
+// Copyright (C) 2019-2024  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -43,6 +43,7 @@ namespace os {
     bool resizable() const { return m_resizable; }
     bool floating() const { return m_floating; }
     bool transparent() const { return m_transparent; }
+    bool modal() const { return m_modal; }
 
     // Parent window used for floating windows
     Window* parent() const { return m_parent; }
@@ -57,6 +58,7 @@ namespace os {
     void floating(const bool s) { m_floating = s; }
     void transparent(const bool s) { m_transparent = s; }
     void parent(Window* p) { m_parent = p; }
+    void modal(const bool s) { m_modal = s; }
 
     const gfx::Rect& frame() const { return m_frame; }
     const gfx::Rect& contentRect() const { return m_contentRect; }
@@ -78,6 +80,7 @@ namespace os {
     bool m_resizable = true;
     bool m_floating = false;
     bool m_transparent = false;
+    bool m_modal = false;
     gfx::Rect m_frame;
     gfx::Rect m_contentRect;
     int m_scale = 1;

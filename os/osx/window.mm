@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2019-2021  Igara Studio S.A.
+// Copyright (C) 2019-2024  Igara Studio S.A.
 // Copyright (C) 2012-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -121,6 +121,9 @@
       self.level = NSFloatingWindowLevel;
       self.hidesOnDeactivate = true;
     }
+
+    if (spec->modal())
+      self.level = NSModalPanelWindowLevel;
 
     // Hide the "View > Show Tab Bar" menu item
     if ([self respondsToSelector:@selector(setTabbingMode:)])
@@ -366,6 +369,9 @@ gfx::Rect WindowOSX::restoredFrame() const
 
 void WindowOSX::activate()
 {
+  if ([m_nsWindow.delegate respondsToSelector:@selector(windowShouldBecomeKey:)] &&
+      ![(id)m_nsWindow.delegate windowShouldBecomeKey:m_nsWindow])
+    return;
   [m_nsWindow makeKeyWindow];
 }
 
