@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2020-2021  Igara Studio S.A.
+// Copyright (C) 2020-2024  Igara Studio S.A.
 // Copyright (C) 2015  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -115,6 +115,12 @@ namespace os {
       m_impl->onBeforeMaximizeFrame();
   }
   return YES;
+}
+
+- (BOOL)windowShouldBecomeKey:(NSWindow *)sender
+{
+  NSWindow* modalWindow = [NSApp modalWindow];
+  return !modalWindow || modalWindow == sender;
 }
 
 @end

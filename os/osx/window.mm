@@ -123,6 +123,9 @@
       self.hidesOnDeactivate = true;
     }
 
+    if (spec->modal())
+      self.level = NSModalPanelWindowLevel;
+
     // Hide the "View > Show Tab Bar" menu item
     if ([self respondsToSelector:@selector(setTabbingMode:)])
       [self setTabbingMode:NSWindowTabbingModeDisallowed];
@@ -367,6 +370,9 @@ gfx::Rect WindowOSX::restoredFrame() const
 
 void WindowOSX::activate()
 {
+  if ([m_nsWindow.delegate respondsToSelector:@selector(windowShouldBecomeKey:)] &&
+      ![(id)m_nsWindow.delegate windowShouldBecomeKey:m_nsWindow])
+    return;
   [m_nsWindow makeKeyWindow];
 }
 
