@@ -69,6 +69,7 @@
 {
   if (self = [super init]) {
     m_isHidden = false;
+    m_floatingWindows = [NSMutableArray array];
   }
   return self;
 }
@@ -92,6 +93,30 @@
 
 - (void)applicationWillResignActive:(NSNotification*)notification
 {
+  // Identify the main window
+  NSWindow* mainWindow = nil;
+  for (NSWindow* window in [NSApp windows]) {
+    if (!window.isFloatingPanel) {
+      mainWindow = window;
+      break;
+    }
+  }
+  if (mainWindow) {
+    AppDelegateOSX* delegate = (AppDelegateOSX*)[NSApp delegate];
+    for (NSWindow* floatingWindow in delegate.floatingWindows) {
+      floatingWindow.level = NSNormalWindowLevel;
+      // Send floating window to the background of the main window.
+      // This is done to avoid a small glitch in floating windows when
+      // our application is activated (sometimes the floating window
+      // flickers during application activation). This happens due to
+      // the manipulation of the window 'level' between
+      // 'NSNormalWindowLevel' (inside 'applicationWillResignActive')
+      // and 'NSFloatingWindowLevel' (inside
+      // 'applicationDidBecomeActive').
+      floatingWindow.orderedIndex = mainWindow.orderedIndex + 1;
+    }
+  }
+
   NSEvent* event = [NSApp currentEvent];
   if (event != nil)
     [ViewOSX updateKeyFlags:event];
@@ -102,6 +127,10 @@
   NSEvent* event = [NSApp currentEvent];
   if (event != nil)
     [ViewOSX updateKeyFlags:event];
+
+  AppDelegateOSX* delegate = (AppDelegateOSX*)[NSApp delegate];
+  for (NSWindow* floatingWindow in delegate.floatingWindows)
+    floatingWindow.level = NSFloatingWindowLevel;
 }
 
 - (void)applicationDidHide:(NSNotification*)notification
@@ -168,6 +197,11 @@
 - (BOOL)isHidden
 {
   return m_isHidden;
+}
+
+- (NSMutableArray<NSWindow*>*) floatingWindows
+{
+  return m_floatingWindows;
 }
 
 @end
