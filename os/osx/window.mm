@@ -12,6 +12,7 @@
 #include "os/osx/window.h"
 
 #include "base/debug.h"
+#include "os/osx/app_delegate.h"
 #include "os/event.h"
 #include "os/osx/app.h"
 #include "os/osx/event_queue.h"
@@ -120,7 +121,13 @@
 
     if (spec->floating()) {
       self.level = NSFloatingWindowLevel;
-      self.hidesOnDeactivate = true;
+      self.hidesOnDeactivate = false;
+      // Needed to keep track all the floating windows pointers
+      // to handle its 'floatingWindow.level' when the application
+      // turns active/inactive inside 'app_delegate.mm'.
+      AppDelegateOSX* delegate = (AppDelegateOSX*)[NSApp delegate];
+      if (delegate)
+        [delegate.floatingWindows addObject:self];
     }
 
     if (spec->modal())
@@ -140,6 +147,10 @@
 
 - (void)removeImpl
 {
+  AppDelegateOSX* delegate = (AppDelegateOSX*)[NSApp delegate];
+  if (delegate)
+    [delegate.floatingWindows removeObject:self];
+
   [m_view removeImpl];
 
   [self setDelegate:nil];
