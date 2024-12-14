@@ -10,7 +10,8 @@
 #pragma once
 
 #include "base/debug.h"
-#include "gfx/color_space.h"    // Include here avoid error with None
+#include "gfx/color_space.h"  // Include here avoid error with None
+#include "monitor.h"
 #include "os/event_queue.h"
 
 #include <X11/Xlib.h>
@@ -32,11 +33,13 @@ public:
   ::Display* display() const { return m_display; }
   ::XIM xim() const { return m_xim; }
   XInput* xinput();
+  MonitorsX11* monitors();
 
 private:
   ::Display* m_display;
   ::XIM m_xim;
   std::unique_ptr<XInput> m_xinput;
+  std::unique_ptr<MonitorsX11> m_monitors;
 };
 
 } // namespace os

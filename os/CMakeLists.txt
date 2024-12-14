@@ -51,7 +51,9 @@ else()
     x11/system.cpp
     x11/window.cpp
     x11/x11.cpp
-    x11/xinput.cpp)
+    x11/xinput.cpp
+    x11/monitor.cpp
+    x11/monitor.h)
 endif()
 
 ######################################################################
@@ -146,7 +148,10 @@ else()
   if(NOT X11_Xinput_FOUND)
     message(FATAL_ERROR "Xinput library not found")
   endif()
-  list(APPEND LAF_OS_PLATFORM_LIBS ${X11_Xcursor_LIB})
+  if(NOT X11_Xrandr_FOUND)
+    message(FATAL_ERROR "Xrandr library not found")
+  endif()
+  list(APPEND LAF_OS_PLATFORM_LIBS ${X11_Xcursor_LIB} ${X11_Xrandr_LIB})
 
   check_library_exists(X11 XOpenIM "${X11_LIB_SEARCH_PATH}" XIM_FOUND)
 
