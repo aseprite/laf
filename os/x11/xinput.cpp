@@ -77,75 +77,52 @@ void XInput::load(::Display* display)
   if (!system)
     return;
 
-  std::string userDefinedTablet = system->tabletOptions().detectStylusPattern;
-  if (!userDefinedTablet.empty())
-    userDefinedTablet = base::string_to_lower(userDefinedTablet);
-
-  std::string devName;
   for (int i=0; i<ndevices; ++i) {
     XDeviceInfo* devInfo = devices+i;
     if (!devInfo->name)
       continue;
 
-    // Some devices has "stylus" and others "STYLUS".
-    devName = base::string_to_lower(devInfo->name);
-
-    PointerType pointerType;
-    if (std::strstr(devName.c_str(), "stylus") ||
-        // Some devices has "Tablet Pen", others "PenTablet Pen",
-        // this case cover both:
-        std::strstr(devName.c_str(), "tablet pen") ||
-        // Generic driver for stylus with external monitors?
-        std::strstr(devName.c_str(), "tablet monitor pen") ||
-        // Detect old Wacom Bamboo devices
-        std::strstr(devName.c_str(), "wacom bamboo connect pen pen") ||
-        // Detect user-defined strings
-        (!userDefinedTablet.empty() &&
-         std::strstr(devName.c_str(), userDefinedTablet.c_str()))) {
-      pointerType = PointerType::Pen;
-    }
-    // It can be "eraser", or "Tablet Eraser", or "PenTablet
-    // Eraser", etc. Anything with "eraser" word should work.
-    else if (std::strstr(devName.c_str(), "eraser")) {
-      pointerType = PointerType::Eraser;
-    }
-    else
-      continue;
+    PointerType pointerType = PointerType::Unknown;
 
     auto* p = (uint8_t*)devInfo->inputclassinfo;
-    for (int j=0; j<devInfo->num_classes; ++j, p+=((XAnyClassPtr)p)->length) {
+    for (int j = 0; j<devInfo->num_classes; ++j, p += ((XAnyClassPtr)p)->length) {
       if (((XAnyClassPtr)p)->c_class != ValuatorClass)
         continue;
 
       auto* valuator = (XValuatorInfoPtr)p;
-      // Only for devices with 3 or more axes (axis 0 is X, 1 is Y,
-      // and 2 is the pressure).
-      if (valuator->num_axes < 3)
-        continue;
+      // Check if device supports pressure
+      if (valuator->num_axes >= 3 && valuator->axes[2].max_value > valuator->axes[2].min_value) {
+        if (std::strstr(devInfo->name, "eraser"))
+          pointerType = PointerType::Eraser;
+        else
+          pointerType = PointerType::Pen;
 
-      Info info;
-      info.pointerType = pointerType;
-      info.minPressure = valuator->axes[2].min_value;
-      info.maxPressure = valuator->axes[2].max_value;
+        Info info;
+        info.pointerType = pointerType;
+        info.minPressure = valuator->axes[2].min_value;
+        info.maxPressure = valuator->axes[2].max_value;
 
-      XDevice* device = XOpenDevice(display, devInfo->id);
-      if (!device)
-        continue;
+        XDevice* device = XOpenDevice(display, devInfo->id);
+        if (!device)
+          continue;
 
-      XEventClass eventClass;
-      int eventType;
+        XEventClass eventClass;
+        int eventType;
 
-      DeviceButtonPress(device, eventType, eventClass);
-      addEvent(eventType, eventClass, Event::MouseDown);
+        DeviceButtonPress(device, eventType, eventClass);
+        addEvent(eventType, eventClass, Event::MouseDown);
 
-      DeviceButtonRelease(device, eventType, eventClass);
-      addEvent(eventType, eventClass, Event::MouseUp);
+        DeviceButtonRelease(device, eventType, eventClass);
+        addEvent(eventType, eventClass, Event::MouseUp);
 
-      DeviceMotionNotify(device, eventType, eventClass);
-      addEvent(eventType, eventClass, Event::MouseMove);
+        DeviceMotionNotify(device, eventType, eventClass);
+        addEvent(eventType, eventClass, Event::MouseMove);
 
-      m_info[device->device_id] = info;
-      m_openDevices.push_back(device);
+        m_info[device->device_id] = info;
+        m_openDevices.push_back(device);
+
+        break; // if found a valid device
+      }
     }
   }
 
