@@ -216,6 +216,45 @@ std::string get_relative_path(const std::string& filename, const std::string& ba
   return relativePath;
 }
 
+std::string get_absolute_path_from_relative(const std::string& base_path,
+                                            const std::string& relative_filename)
+{
+  std::vector<std::string> absoluteParts;
+  split_string(base_path, absoluteParts, path_separators);
+
+  std::vector<std::string> relativeParts;
+  split_string(relative_filename, relativeParts, path_separators);
+
+  // If the first element is empty, it means that the relative
+  // file name starts with a separator and it also means that
+  // it's an absolute address.
+  if (relativeParts.size() >= 1 && relativeParts[0] == "")
+    return relative_filename;
+
+  bool relative_fn_browsable = false;
+  for (auto it = relativeParts.begin(); it != relativeParts.end(); ++it) {
+    if (*it == "..") {
+      relative_fn_browsable = true;
+      break;
+    }
+  }
+  if (!relative_fn_browsable)
+    return base::join_path(base_path, relative_filename);
+
+  for (auto it = relativeParts.begin(); it != relativeParts.end(); ++it) {
+    if (*it == "..")
+      absoluteParts.pop_back();
+    else
+      absoluteParts.push_back(*it);
+  }
+
+  std::string absolutePath = path_separators;
+  for (auto it = absoluteParts.begin(); it != absoluteParts.end(); ++it)
+    absolutePath = base::join_path(absolutePath, *it);
+
+  return absolutePath;
+}
+
 std::string join_path(const std::string& path, const std::string& file)
 {
   std::string result(path);

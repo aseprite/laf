@@ -232,6 +232,25 @@ TEST(FS, GetRelativePath)
 #endif
 }
 
+TEST(FS, GetAbsolutePathFromRelativePath)
+{
+#if LAF_WINDOWS
+  EXPECT_EQ("C:\\foo\\bar\\test.file", get_absolute_path_from_relative("C:\\foo", "bar\\test.file"));
+  EXPECT_EQ("D:\\another\\disk\\foo\\bar\\test.file",
+                                       get_absolute_path_from_relative("D:\\another\\disk", "foo\\bar\\test.file"));
+  EXPECT_EQ("\\foo\\bar\\test.file",   get_absolute_path_from_relative("D:\\another\\disk", "\\foo\\bar\\test.file"));
+  EXPECT_EQ("C:\\foo\\bar\\test.file", get_absolute_path_from_relative("C:\\foo\\another", "..\\bar\\test.file"));
+  EXPECT_EQ("C:\\foo\\bar\\test.file", get_absolute_path_from_relative("C:\\foo\\a\\b", "..\\..\\bar\\test.file"));
+#else
+  EXPECT_EQ("C:/foo/bar/test.file",    get_absolute_path_from_relative("C:/foo", "bar/test.file"));
+  EXPECT_EQ("D:/another/disk/foo/bar/test.file",
+                                       get_absolute_path_from_relative("D:/another/disk", "foo/bar/test.file"));
+  EXPECT_EQ("/foo/bar/test.file",      get_absolute_path_from_relative("D:/another/disk", "/foo/bar/test.file"));
+  EXPECT_EQ("/foo/bar/test.file",      get_absolute_path_from_relative("/foo/another", "../bar/test.file"));
+  EXPECT_EQ("/foo/bar/test.file",      get_absolute_path_from_relative("/foo/a/b", "../../bar/test.file"));
+#endif
+}
+
 TEST(FS, GetAbsolutePath)
 {
   const auto cp = get_current_path();

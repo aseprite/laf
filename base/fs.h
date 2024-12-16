@@ -87,49 +87,53 @@ inline constexpr bool is_path_separator(std::string::value_type chr)
     chr == '/');
 }
 
-// Returns only the path (without the last trailing slash).
-std::string get_file_path(const std::string& filename);
+  // Returns only the path (without the last trailing slash).
+  std::string get_file_path(const std::string& filename);
 
-// Returns the file name with its extension, removing the path.
-std::string get_file_name(const std::string& filename);
+  // Returns the file name with its extension, removing the path.
+  std::string get_file_name(const std::string& filename);
 
-// Returns the extension of the file name (without the dot).
-std::string get_file_extension(const std::string& filename);
+  // Returns the extension of the file name (without the dot).
+  std::string get_file_extension(const std::string& filename);
 
-// Returns the whole path with another extension.
-std::string replace_extension(const std::string& filename, const std::string& extension);
+  // Returns the whole path with another extension.
+  std::string replace_extension(const std::string& filename, const std::string& extension);
 
-// Returns the file name without path and without extension.
-std::string get_file_title(const std::string& filename);
-std::string get_file_title_with_path(const std::string& filename);
+  // Returns the file name without path and without extension.
+  std::string get_file_title(const std::string& filename);
+  std::string get_file_title_with_path(const std::string& filename);
 
-// Returns the relative path of the given filename from the base_path.
-std::string get_relative_path(const std::string& filename, const std::string& base_path);
+  // Returns the relative path of the given filename from the base_path.
+  std::string get_relative_path(const std::string& filename, const std::string& base_path);
 
-// Joins two paths or a path and a file name with a path-separator.
-std::string join_path(const std::string& path, const std::string& file);
+  // Returns the absolute path of a given relative filename referred to the base_path.
+  std::string get_absolute_path_from_relative(const std::string& base_path,
+                                              const std::string& relative_filename);
 
-// Removes the trailing separator from the given path.
-std::string remove_path_separator(const std::string& path);
+  // Joins two paths or a path and a file name with a path-separator.
+  std::string join_path(const std::string& path, const std::string& file);
 
-// Replaces all separators with the system separator.
-std::string fix_path_separators(const std::string& filename);
+  // Removes the trailing separator from the given path.
+  std::string remove_path_separator(const std::string& path);
 
-// Remove superfluous path elements ("/../" and "/./") and call
-// fix_path_separators() for the given path.
-std::string normalize_path(const std::string& path);
+  // Replaces all separators with the system separator.
+  std::string fix_path_separators(const std::string& filename);
 
-// Returns true if the filename contains one of the specified
-// extensions. The "extensions" parameter must be a set of possible
-// extensions.
-bool has_file_extension(const std::string& filename, const base::paths& extensions);
+  // Remove superfluous path elements ("/../" and "/./") and call
+  // fix_path_separators() for the given path.
+  std::string normalize_path(const std::string& path);
 
-int compare_filenames(const std::string& a, const std::string& b);
+  // Returns true if the filename contains one of the specified
+  // extensions. The "extensions" parameter must be a set of possible
+  // extensions.
+  bool has_file_extension(const std::string& filename, const base::paths& extensions);
+
+  int compare_filenames(const std::string& a, const std::string& b);
 
 #if LAF_WINDOWS
-class Version;
-Version get_file_version(const std::string& filename);
-Version get_file_version(const wchar_t* filename);
+  class Version;
+  Version get_file_version(const std::string& filename);
+  Version get_file_version(const wchar_t* filename);
 #endif
 
 } // namespace base
