@@ -245,8 +245,14 @@ TEST(FS, GetAbsolutePath)
 
 #if LAF_WINDOWS
   EXPECT_EQ("C:\\file", get_absolute_path("C:/path/../file"));
+  EXPECT_EQ("C:\\user\\file", get_absolute_path("C:/user/name/path/../../file"));
+  EXPECT_EQ("C:\\file", get_absolute_path("C:/user/name/path/../../../file"));
+  EXPECT_EQ("C:\\path\\file", get_absolute_path("C:/user/name/..//.././path/tag/../file"));
 #else
   EXPECT_EQ("/file", get_absolute_path("/path/../file"));
+  EXPECT_EQ("/user/file", get_absolute_path("/user/name/path/../../file"));
+  EXPECT_EQ("/file", get_absolute_path("/user/name/path/../../../file"));
+  EXPECT_EQ("/path/file", get_absolute_path("/user/name/..//.././path/tag/../file"));
 #endif
 }
 
@@ -288,6 +294,7 @@ TEST(FS, NormalizePath)
   EXPECT_EQ(".", normalize_path("a/.."));
   EXPECT_EQ("..", normalize_path("../a/.."));
   EXPECT_EQ(".." + sep + "..", normalize_path("../a/../.."));
+  EXPECT_EQ(".." + sep + "..", normalize_path("../a/../../"));
   EXPECT_EQ("..", normalize_path("a/../.."));
   EXPECT_EQ(sep + "b", normalize_path("/a/../b"));
 
