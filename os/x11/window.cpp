@@ -1252,13 +1252,17 @@ void WindowX11::processX11Event(XEvent& event)
         XSendEvent(m_display, sourceWindow, 0, 0, &event2);
       }
       else if (event.xclient.message_type == XdndDrop) {
+        // The time stamp must be passed to XConvertSelection
+        // to insure that the correct data is received.
+        const Time time = event.xclient.data.l[2];
+
         // Save the X11 window from where this XdndDrop message came
         // from, so then we can send a XdndFinished later.
         g_dndSource = (::Window)event.xclient.data.l[0];
 
         // Ask for the XdndSelection, we're going to receive the
         // dropped items in the SelectionNotify.
-        XConvertSelection(m_display, XdndSelection, URI_LIST, XdndSelection, m_window, CurrentTime);
+        XConvertSelection(m_display, XdndSelection, URI_LIST, XdndSelection, m_window, time);
       }
       break;
 
