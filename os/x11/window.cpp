@@ -93,13 +93,16 @@ Atom _NET_WM_ALLOWED_ACTIONS = 0;
 
 // Atoms used for the XDND protocol
 Atom XdndAware = 0;
+Atom XdndEnter = 0;
 Atom XdndPosition = 0;
 Atom XdndStatus = 0;
 Atom XdndActionCopy = 0;
 Atom XdndDrop = 0;
+Atom XdndTypeList = 0;
 Atom XdndFinished = 0;
 Atom XdndSelection = 0;
 Atom URI_LIST = 0;
+Atom g_dndType = 0; // Accepted data type
 ::Window g_dndSource = 0;
 gfx::Point g_dndPosition;
 
@@ -415,10 +418,12 @@ WindowX11::WindowX11(::Display* display, const WindowSpec& spec)
   // TODO add support for other formats (e.g. dropping images?)
   if (!XdndAware) {
     XdndAware = XInternAtom(m_display, "XdndAware", False);
+    XdndEnter = XInternAtom(m_display, "XdndEnter", False);
     XdndPosition = XInternAtom(m_display, "XdndPosition", False);
     XdndStatus = XInternAtom(m_display, "XdndStatus", False);
     XdndActionCopy = XInternAtom(m_display, "XdndActionCopy", False);
     XdndDrop = XInternAtom(m_display, "XdndDrop", False);
+    XdndTypeList = XInternAtom(m_display, "XdndTypeList", False);
     XdndFinished = XInternAtom(m_display, "XdndFinished", False);
     XdndSelection = XInternAtom(m_display, "XdndSelection", False);
     URI_LIST = XInternAtom(m_display, "text/uri-list", False);
@@ -1231,6 +1236,58 @@ void WindowX11::processX11Event(XEvent& event)
         ev.setType(Event::CloseWindow);
         queueEvent(ev);
       }
+      else if (event.xclient.message_type == XdndEnter) {
+        Atom actual_type;
+        int actual_format;
+        unsigned long nitems;
+        unsigned long bytes_after;
+        Atom* prop = nullptr;
+        Atom actual_types[3];
+
+        const auto sourceWindow = (::Window)event.xclient.data.l[0];
+        // Bit 0 = the source supports more than 3 data types
+        // Check the property XdndTypeList on the source window for the list of all available types.
+        const bool hasMoreTypes = event.xclient.data.l[1] & 1;
+
+        if (hasMoreTypes) {
+          XGetWindowProperty(m_display,
+                             sourceWindow,
+                             XdndTypeList,
+                             0,
+                             256,
+                             False,
+                             XA_ATOM,
+                             &actual_type,
+                             &actual_format,
+                             &nitems,
+                             &bytes_after,
+                             (unsigned char**)&prop);
+        }
+        else {
+          nitems = 3;
+          // data.l[2,3,4] contain the first three types that the source supports.
+          // Unused slots are set to None.
+          actual_types[0] = event.xclient.data.l[2];
+          actual_types[1] = event.xclient.data.l[3];
+          actual_types[2] = event.xclient.data.l[4];
+          prop = actual_types;
+        }
+
+        g_dndType = None;
+        if (prop) {
+          // If the type "text/uri-list" is available, we will accept the drop.
+          for (unsigned long i = 0; i < nitems; i++) {
+            if (prop[i] == URI_LIST) {
+              g_dndType = prop[i];
+              break;
+            }
+          }
+
+          if (hasMoreTypes) {
+            XFree(prop);
+          }
+        }
+      }
       else if (event.xclient.message_type == XdndPosition) {
         auto sourceWindow = (::Window)event.xclient.data.l[0];
         // Save the latest mouse position reported by the source window
@@ -1246,23 +1303,40 @@ void WindowX11::processX11Event(XEvent& event)
         event2.xclient.message_type = XdndStatus;
         event2.xclient.format = 32;
         event2.xclient.data.l[0] = m_window;
-        // Bit 0 = this window accept the drop
-        event2.xclient.data.l[1] = 1;
-        event2.xclient.data.l[4] = XdndActionCopy;
+        if (g_dndType) {
+          // Bit 0 = this window accept the drop
+          event2.xclient.data.l[1] = 1;
+          event2.xclient.data.l[4] = XdndActionCopy;
+        }
         XSendEvent(m_display, sourceWindow, 0, 0, &event2);
       }
       else if (event.xclient.message_type == XdndDrop) {
-        // The time stamp must be passed to XConvertSelection
-        // to insure that the correct data is received.
-        const Time time = event.xclient.data.l[2];
+        auto sourceWindow = (::Window)event.xclient.data.l[0];
 
-        // Save the X11 window from where this XdndDrop message came
-        // from, so then we can send a XdndFinished later.
-        g_dndSource = (::Window)event.xclient.data.l[0];
+        if (g_dndType) {
+          // The time stamp must be passed to XConvertSelection
+          // to insure that the correct data is received.
+          const Time time = event.xclient.data.l[2];
 
-        // Ask for the XdndSelection, we're going to receive the
-        // dropped items in the SelectionNotify.
-        XConvertSelection(m_display, XdndSelection, URI_LIST, XdndSelection, m_window, time);
+          // Save the X11 window from where this XdndDrop message came
+          // from, so then we can send a XdndFinished later.
+          g_dndSource = sourceWindow;
+
+          // Ask for the XdndSelection, we're going to receive the
+          // dropped items in the SelectionNotify.
+          XConvertSelection(m_display, XdndSelection, g_dndType, XdndSelection, m_window, time);
+        }
+        else {
+          // Always send XdndFinished, even if the drop isn't accepted.
+          XEvent event2;
+          memset(&event2, 0, sizeof(event2));
+          event2.xany.type = ClientMessage;
+          event2.xclient.window = sourceWindow;
+          event2.xclient.message_type = XdndFinished;
+          event2.xclient.format = 32;
+          event2.xclient.data.l[0] = m_window;
+          XSendEvent(m_display, sourceWindow, 0, 0, &event2);
+        }
       }
       break;
 
@@ -1280,7 +1354,7 @@ void WindowX11::processX11Event(XEvent& event)
                                            0,
                                            256,
                                            False,
-                                           URI_LIST,
+                                           g_dndType,
                                            &actual_type,
                                            &actual_format,
                                            &nitems,
@@ -1324,10 +1398,11 @@ void WindowX11::processX11Event(XEvent& event)
         event2.xclient.message_type = XdndFinished;
         event2.xclient.format = 32;
         event2.xclient.data.l[0] = m_window;
-        // Set bit 0 when the drop operation was accepted.
-        event2.xclient.data.l[1] = (successful ? 1 : 0);
-        event2.xclient.data.l[2] = 0;
-        event2.xclient.data.l[3] = 0;
+        if (successful) {
+          // Set bit 0 when the drop operation was accepted.
+          event2.xclient.data.l[1] = 1;
+          event2.xclient.data.l[2] = XdndActionCopy;
+        }
         XSendEvent(m_display, g_dndSource, 0, 0, &event2);
       }
       break;
