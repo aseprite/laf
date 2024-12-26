@@ -10,6 +10,7 @@ set(LAF_OS_SOURCES
   common/main.cpp
   common/system.cpp
   dnd.cpp
+  font_path.cpp
   system.cpp
   window.cpp)
 if(WIN32)
@@ -17,6 +18,7 @@ if(WIN32)
     win/color_space.cpp
     win/dnd.cpp
     win/event_queue.cpp
+    win/font_path_win.cpp
     win/keys.cpp
     win/native_dialogs.cpp
     win/system.cpp
@@ -34,6 +36,7 @@ elseif(APPLE)
       osx/dnd.mm
       osx/color_space.mm
       osx/event_queue.mm
+      osx/font_path_osx.mm
       osx/keys.mm
       osx/logger.mm
       osx/menus.mm
@@ -46,6 +49,7 @@ elseif(APPLE)
 else()
   list(APPEND LAF_OS_SOURCES
     x11/event_queue.cpp
+    x11/font_path_unix.cpp
     x11/keys.cpp
     x11/native_dialogs.cpp
     x11/system.cpp
