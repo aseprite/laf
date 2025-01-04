@@ -26,6 +26,13 @@ need for Pixman at all).
 
 ## Compile
 
+On a fresh clone of the repository, ensure git submodules are updated.
+
+```
+git submodule init
+git submodule update
+```
+
 To compile *laf* with Skia as backend you have to specify some
 variables pointing to a valid compiled version of Skia in your
 disk. In the following example `/skiadir` is the absolute path to a
