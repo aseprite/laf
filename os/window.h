@@ -103,6 +103,10 @@ public:
   // The window size will be a multiple of the scale.
   virtual void setScale(int scale) = 0;
 
+  // Returns the current window scale for default DPI value.
+  // It is constant across different displays.
+  virtual int baseScale() const { return scale(); }
+
   // Returns true if the window is visible in the screen.
   virtual bool isVisible() const = 0;
 
