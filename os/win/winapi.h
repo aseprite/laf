@@ -47,6 +47,12 @@ typedef HRESULT(WINAPI* ProcessPointerFramesInteractionContext_Func)(
   const POINTER_INFO* pointerInfo);
 
 typedef BOOL(WINAPI* SetProcessDpiAwarenessContext_Func)(DPI_AWARENESS_CONTEXT value);
+typedef DPI_AWARENESS_CONTEXT(WINAPI* GetWindowDpiAwarenessContext_Func)(HWND hwnd);
+typedef BOOL(WINAPI* AreDpiAwarenessContextsEqual_Func)(DPI_AWARENESS_CONTEXT dpiContextA, DPI_AWARENESS_CONTEXT dpiContextB);
+typedef BOOL(WINAPI* EnableNonClientDpiScaling_Func)(HWND hwnd);
+typedef UINT(WINAPI* GetDpiForWindow_Func)(HWND hwnd);
+typedef int(WINAPI* GetSystemMetricsForDpi_Func)(int nIndex, UINT dpi);
+typedef BOOL(WINAPI* AdjustWindowRectExForDpi_Func)(LPRECT lpRect, DWORD dwStyle, BOOL bMenu, DWORD dwExStyle, UINT dpi);
 
 class WinAPI {
 public:
@@ -71,6 +77,14 @@ public:
   SetPropertyInteractionContext_Func SetPropertyInteractionContext = nullptr;
   ProcessPointerFramesInteractionContext_Func ProcessPointerFramesInteractionContext = nullptr;
 
+  // Functions introduced on Windows 10 version 1607
+  GetWindowDpiAwarenessContext_Func GetWindowDpiAwarenessContext = nullptr;
+  AreDpiAwarenessContextsEqual_Func AreDpiAwarenessContextsEqual = nullptr;
+  EnableNonClientDpiScaling_Func EnableNonClientDpiScaling = nullptr;
+  GetDpiForWindow_Func GetDpiForWindow = nullptr;
+  GetSystemMetricsForDpi_Func GetSystemMetricsForDpi = nullptr;
+  AdjustWindowRectExForDpi_Func AdjustWindowRectExForDpi = nullptr;
+  
   // Functions introduced on Windows 10 version 1703
   SetProcessDpiAwarenessContext_Func SetProcessDpiAwarenessContext = nullptr;
 

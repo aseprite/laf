@@ -25,6 +25,12 @@ WinAPI::WinAPI()
     GET_PROC(m_user32, GetPointerInfo);
     GET_PROC(m_user32, GetPointerPenInfo);
     GET_PROC(m_user32, SetProcessDpiAwarenessContext);
+    GET_PROC(m_user32, GetWindowDpiAwarenessContext);
+    GET_PROC(m_user32, AreDpiAwarenessContextsEqual);
+    GET_PROC(m_user32, EnableNonClientDpiScaling);
+    GET_PROC(m_user32, GetDpiForWindow);
+    GET_PROC(m_user32, GetSystemMetricsForDpi);
+    GET_PROC(m_user32, AdjustWindowRectExForDpi);
   }
   if (m_ninput) {
     GET_PROC(m_ninput, CreateInteractionContext);
