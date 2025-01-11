@@ -158,6 +158,7 @@ WindowWin::Touch::Touch() : fingers(0), canBeMouse(false), asMouse(false), timer
 WindowWin::WindowWin(const WindowSpec& spec)
   : m_clientSize(1, 1)
   , m_scale(spec.scale())
+  , m_baseScale(spec.scale())
   , m_isCreated(false)
   , m_adjustShadow(true)
   , m_translateDeadKeys(false)
@@ -263,6 +264,11 @@ WindowWin::WindowWin(const WindowSpec& spec)
 
   SetWindowLongPtr(m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
+  if (winApi.GetWindowDpiAwarenessContext) {
+    double scaleFactor = winApi.GetDpiForWindow(m_hwnd) / (double) USER_DEFAULT_SCREEN_DPI;
+    m_scale = std::max(1, (int)(m_baseScale * scaleFactor + 0.51));
+  }
+
   // This flag is used to avoid calling T::resizeImpl() when we
   // add the scrollbars to the window. (As the T type could not be
   // fully initialized yet.)
@@ -361,7 +367,10 @@ os::ColorSpaceRef WindowWin::colorSpace() const
 
 void WindowWin::setScale(int scale)
 {
-  m_scale = scale;
+  double scaleFactor = m_scale / (double) m_baseScale;
+  m_baseScale = scale;
+  // round to nearest integer, rounding 0.5 up
+  m_scale = std::max(1, (int)(scale * scaleFactor + 0.51));
 
   // Align window size to new scale
   {
@@ -965,6 +974,21 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
         m_fixingPos = false;
       }
       break;
+
+    case WM_DPICHANGED: {
+      double scaleFactor = HIWORD(wparam) / (double) USER_DEFAULT_SCREEN_DPI;
+      m_scale = std::max(1, (int)(m_baseScale * scaleFactor + 0.51));
+
+      RECT* prcNewWindow = (RECT*)lparam;
+      SetWindowPos(m_hwnd,
+                  nullptr,
+                  prcNewWindow ->left,
+                  prcNewWindow ->top,
+                  prcNewWindow->right - prcNewWindow->left,
+                  prcNewWindow->bottom - prcNewWindow->top,
+                  SWP_NOZORDER | SWP_NOACTIVATE);
+      break;
+    }
 
     case WM_SETCURSOR:
       // We set our custom cursor if we are in the client area, or in
