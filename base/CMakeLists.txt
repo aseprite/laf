@@ -56,6 +56,7 @@ set(BASE_SOURCES
   thread.cpp
   thread_pool.cpp
   time.cpp
+  uuid.cpp
   version.cpp)
 
 if(WIN32)
