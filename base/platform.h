@@ -28,9 +28,10 @@ struct Platform {
   };
 
   enum class Arch {
-    x86,   // Windows 32-bit, Linux 32-bit
-    x64,   // Windows 64-bit, Mac Intel
-    arm64, // Mac Apple Silicon (M1, M1 Pro), Raspberry Pi?
+    x86,     // Windows 32-bit, Linux 32-bit
+    x64,     // Windows 64-bit, Mac Intel
+    arm64,   // Mac Apple Silicon (M1, M1 Pro), Raspberry Pi?
+    riscv64, // Linux RISC-V 64-bit
   };
 
   static constexpr OS os =
@@ -46,6 +47,8 @@ struct Platform {
   static constexpr Arch arch =
 #if defined(__arm64__) || defined(__aarch64__)
     Arch::arm64
+#elif defined(__riscv) && __riscv_xlen == 64
+    Arch::riscv64
 #elif defined(__x86_64__) || defined(_WIN64)
     Arch::x64
 #else
@@ -54,7 +57,8 @@ struct Platform {
     ;
 
   static_assert((arch == Arch::x86 && sizeof(void*) == 4) ||
-                  ((arch == Arch::x64 || arch == Arch::arm64) && sizeof(void*) == 8),
+                  ((arch == Arch::x64 || arch == Arch::arm64 || arch == Arch::riscv64) &&
+                   sizeof(void*) == 8),
                 "Invalid identification of CPU architecture");
 
   Version osVer;
