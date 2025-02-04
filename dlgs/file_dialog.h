@@ -20,6 +20,14 @@ namespace dlgs {
 class FileDialog;
 using FileDialogRef = base::Ref<FileDialog>;
 
+#if LAF_WINDOWS
+class FileDialogDelegate {
+public:
+  virtual ~FileDialogDelegate() {}
+  virtual void onFolderChange(const std::string& path) = 0;
+};
+#endif // LAF_WINDOWS
+
 class FileDialog : public base::RefCount {
 public:
   enum class Type {
@@ -36,7 +44,10 @@ public:
   };
 
   struct Spec {
-#if LAF_MACOS
+#if LAF_WINDOWS
+    // Listen events of the FileDialog.
+    FileDialogDelegate* delegate = nullptr;
+#elif LAF_MACOS
     // Indicates which is the "Edit" menu (NSMenuItem*) with
     // Undo/Redo/Cut/Copy/Paste/etc. commands. Used by the
     // FileDialogOSX impl to completely replace the "Edit" menu with a
@@ -58,6 +69,10 @@ public:
   static FileDialogRef make(const Spec& spec);
 #if LAF_WINDOWS
   static FileDialogRef makeWin(const Spec& spec);
+  static FileDialogRef makeWinUnsafe(const Spec& spec);
+  #ifdef LAF_DLGS_PROC_NAME
+  static FileDialogRef makeWinSafe(const Spec& spec);
+  #endif
 #elif LAF_MACOS
   static FileDialogRef makeOSX(const Spec& spec);
 #elif LAF_LINUX

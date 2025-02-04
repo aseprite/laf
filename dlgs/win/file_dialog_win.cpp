@@ -1,5 +1,5 @@
 // laf-dlgs
-// Copyright (C) 2020-2024  Igara Studio S.A.
+// Copyright (C) 2020-2025  Igara Studio S.A.
 // Copyright (C) 2015-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -26,9 +26,94 @@ namespace dlgs {
 // 32k is the limit for Win95/98/Me/NT4/2000/XP with ANSI version
 #define FILENAME_BUFSIZE (1024 * 32)
 
+// IFileDialogEvents impl used to change the OnFolderChange() events
+// and know the latest visited folder/location. In case of crash we
+// can use this location.
+class FileDialogEvents : public IFileDialogEvents {
+public:
+  FileDialogEvents(FileDialogDelegate* delegate) : m_delegate(delegate) {}
+
+  // IUnknown impl
+  IFACEMETHOD(QueryInterface)(REFIID riid, void** ppv)
+  {
+    if (riid == __uuidof(IFileDialogEvents)) {
+      *ppv = this;
+      return S_OK;
+    }
+    return E_NOINTERFACE;
+  }
+
+  IFACEMETHOD_(ULONG, AddRef)() { return InterlockedIncrement(&m_ref); }
+
+  IFACEMETHOD_(ULONG, Release)()
+  {
+    ULONG ref = InterlockedDecrement(&m_ref);
+    if (!ref)
+      delete this;
+    return ref;
+  }
+
+  // IFileDialogEvents impl
+  IFACEMETHOD(OnFileOk)(IFileDialog* dlg) { return S_OK; }
+  IFACEMETHOD(OnFolderChanging)(IFileDialog* dlg, IShellItem* psiFolder) { return S_OK; }
+  IFACEMETHOD(OnFolderChange)(IFileDialog* dlg)
+  {
+    base::ComPtr<IShellItem> item;
+    HRESULT hr = dlg->GetFolder(&item);
+    if (FAILED(hr))
+      return hr;
+
+    LPWSTR name = nullptr;
+    hr = item->GetDisplayName(SIGDN_DESKTOPABSOLUTEPARSING, &name);
+    if (FAILED(hr))
+      return hr;
+
+    if (m_delegate)
+      m_delegate->onFolderChange(base::to_utf8(name));
+
+    CoTaskMemFree(name);
+    return S_OK;
+  }
+  IFACEMETHOD(OnSelectionChange)(IFileDialog* dlg) { return S_OK; }
+  IFACEMETHOD(OnShareViolation)(IFileDialog* dlg,
+                                IShellItem* psi,
+                                FDE_SHAREVIOLATION_RESPONSE* pResponse)
+  {
+    return S_OK;
+  }
+  IFACEMETHOD(OnTypeChange)(IFileDialog* dlg) { return S_OK; }
+  IFACEMETHOD(OnOverwrite)(IFileDialog* dlg, IShellItem* psi, FDE_OVERWRITE_RESPONSE* pResponse)
+  {
+    return S_OK;
+  }
+
+private:
+  FileDialogDelegate* m_delegate = nullptr;
+  long m_ref = 1;
+};
+
+// A helper to call IFileDialog::Advise/Unadvise() methods.
+class ScopedAdvise {
+public:
+  ScopedAdvise(IFileDialog* dlg, IFileDialogEvents* events) : m_dlg(dlg)
+  {
+    m_dlg->Advise(events, &m_cookie);
+  }
+  ~ScopedAdvise()
+  {
+    if (m_cookie)
+      m_dlg->Unadvise(m_cookie);
+  }
+
+private:
+  base::ComPtr<IFileDialog> m_dlg;
+  DWORD m_cookie = 0;
+};
+
+// FileDialog impl for Windows
 class FileDialogWin : public FileDialog {
 public:
-  FileDialogWin(const Spec& spec) : m_filename(FILENAME_BUFSIZE), m_defFilter(0) {}
+  FileDialogWin(const Spec& spec) : m_spec(spec), m_filename(FILENAME_BUFSIZE), m_defFilter(0) {}
 
   std::string fileName() override { return base::to_utf8(&m_filename[0]); }
 
@@ -124,6 +209,9 @@ private:
       if (FAILED(hr))
         return hr;
     }
+
+    FileDialogEvents fde(m_spec.delegate);
+    ScopedAdvise advise(dlg.get(), &fde);
 
     hr = dlg->Show((HWND)parent);
     if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
@@ -332,6 +420,7 @@ private:
     return filters;
   }
 
+  Spec m_spec;
   int m_defFilter;
   std::vector<WCHAR> m_filename;
   base::paths m_filenames;
@@ -339,6 +428,15 @@ private:
 };
 
 FileDialogRef FileDialog::makeWin(const Spec& spec)
+{
+#ifdef LAF_DLGS_PROC_NAME
+  return FileDialog::makeWinSafe(spec);
+#else
+  return FileDialog::makeWinUnsafe(spec);
+#endif
+}
+
+FileDialogRef FileDialog::makeWinUnsafe(const Spec& spec)
 {
   return base::make_ref<FileDialogWin>(spec);
 }
