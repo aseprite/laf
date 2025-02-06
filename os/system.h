@@ -93,15 +93,16 @@ public:
   // files that were processed from the CLI arguments directly.
   virtual void markCliFileAsProcessed(const std::string& cliFile) = 0;
 
-  // On macOS it calls [NSApplication finishLaunching] that will
-  // produce some extra events like [NSApplicationDelegate
-  // application:openFiles:] which generates os::Event::DropFiles
-  // events for each file specified in the command line.
+  // On macOS it calls [NSApplication run], which in turn does two things:
+  // - It calls [NSApplication finishLaunching], which will produce some extra
+  // events like [NSApplicationDelegate application:openFiles:] which generates
+  // os::Event::DropFiles events for each file specified in the command line.
+  // - It initializes internal state of the NSApplication instance to make it
+  // behave as expected under some circumstances.
   //
-  // You can ignore those DropFiles events if you've already
-  // processed through the CLI arguments (app_main(argc, argv)) or
-  // you can use markCliFileAsProcessed() before calling this
-  // function.
+  // About the first point: you can ignore those DropFiles events if you've
+  // already processed through the CLI arguments (app_main(argc, argv)) or
+  // you can use markCliFileAsProcessed() before calling this function.
   virtual void finishLaunching() = 0;
 
   // We might need to call this function when the app is launched

@@ -52,7 +52,14 @@ public:
 
   void finishLaunching()
   {
-    [m_app finishLaunching];
+    // [m_app run] can only be called once.
+    if (![[NSRunningApplication currentApplication] isFinishedLaunching])
+      // Note that the [m_app run] call doesn't block because we are calling
+      // [NSApp stop] from [AppDelegateOSX applicationDidFinishLaunching]. We only
+      // need the application's initialization done inside run to prevent issues
+      // such as: https://github.com/aseprite/aseprite/issues/4795
+      [m_app run];
+
     [m_appDelegate resetCliFiles];
   }
 
