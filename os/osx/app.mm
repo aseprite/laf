@@ -52,13 +52,24 @@ public:
 
   void finishLaunching()
   {
-    // [m_app run] can only be called once.
-    if (![[NSRunningApplication currentApplication] isFinishedLaunching])
-      // Note that the [m_app run] call doesn't block because we are calling
-      // [NSApp stop] from [AppDelegateOSX applicationDidFinishLaunching]. We only
-      // need the application's initialization done inside run to prevent issues
-      // such as: https://github.com/aseprite/aseprite/issues/4795
-      [m_app run];
+    id runningApp = [NSRunningApplication currentApplication];
+    // [m_app run] must be called once, if the app didn't finish launching yet.
+    if (![runningApp isFinishedLaunching]) {
+      // The run method must be called in GUI mode only, otherwise the
+      // [AppDelegateOSX applicationDidFinishLaunching] doesn't get called
+      // and [m_app run] ends up blocking the app.
+      if ([runningApp activationPolicy] == NSApplicationActivationPolicyRegular) {
+        // Note that the [m_app run] call doesn't block because we are calling
+        // [NSApp stop] from [AppDelegateOSX applicationDidFinishLaunching]. We only
+        // need the application's initialization done inside run to prevent issues
+        // such as: https://github.com/aseprite/aseprite/issues/4795
+        [m_app run];
+      }
+      else {
+        // The app is running in CLI mode, then we just call finishLaunching.
+        [m_app finishLaunching];
+      }
+    }
 
     [m_appDelegate resetCliFiles];
   }
