@@ -161,7 +161,7 @@ std::string get_canonical_path(const std::string& path)
 std::string get_absolute_path(const std::string& path)
 {
   std::string full;
-  if (path.size() > 2 && path[1] != ':')
+  if (!full.empty() && !base::is_absolute_path(path))
     full = base::join_path(base::get_current_path(), path);
   else
     full = path;

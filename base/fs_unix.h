@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2021-2024 Igara Studio S.A.
+// Copyright (c) 2021-2025 Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -213,7 +213,7 @@ std::string get_canonical_path(const std::string& path)
 std::string get_absolute_path(const std::string& path)
 {
   std::string full = path;
-  if (!full.empty() && full[0] != '/')
+  if (!full.empty() && !is_absolute_path(full))
     full = join_path(get_current_path(), full);
   full = normalize_path(full);
   if (!full.empty() && full.back() == path_separator)

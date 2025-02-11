@@ -258,6 +258,31 @@ TEST(FS, GetAbsolutePath)
 #endif
 }
 
+TEST(FS, IsAbsolutePath)
+{
+  EXPECT_FALSE(is_absolute_path(""));
+  EXPECT_FALSE(is_absolute_path("a"));
+  EXPECT_FALSE(is_absolute_path("./a"));
+  EXPECT_FALSE(is_absolute_path("../a"));
+  EXPECT_FALSE(is_absolute_path("."));
+  EXPECT_FALSE(is_absolute_path("./."));
+  EXPECT_FALSE(is_absolute_path("./a/.."));
+  EXPECT_FALSE(is_absolute_path(".\\//."));
+
+#if LAF_WINDOWS
+  EXPECT_TRUE(is_absolute_path("C:\\path\\..\\file"));
+  EXPECT_TRUE(is_absolute_path("\\\\network\\path"));
+  EXPECT_FALSE(is_absolute_path("C:user\\name\\"));
+  EXPECT_FALSE(is_absolute_path("C\\user\\name\\"));
+  EXPECT_FALSE(is_absolute_path("\\user\\path\\"));
+  EXPECT_FALSE(is_absolute_path(".:\\user\\name"));
+  EXPECT_FALSE(is_absolute_path("\\:\\user\\name"));
+#else
+  EXPECT_TRUE(is_absolute_path("/path/../file"));
+  EXPECT_FALSE(is_absolute_path("path/../file"));
+#endif
+}
+
 TEST(FS, GetCanonicalPath)
 {
   const auto cp = get_current_path();

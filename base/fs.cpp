@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2021-2024 Igara Studio S.A.
+// Copyright (c) 2021-2025 Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -34,6 +34,18 @@ const std::string::value_type* path_separators = "\\/";
 #else
 const std::string::value_type* path_separators = "/";
 #endif
+
+bool is_absolute_path(const std::string& path)
+{
+#if LAF_WINDOWS
+  return (path.size() > 2 && std::isalpha(path[0]) && path[1] == ':' &&
+          path[2] == path_separator) ||
+         // UNC network path
+         (path.size() > 1 && path[0] == path_separator && path[1] == path_separator);
+#else
+  return !path.empty() && path[0] == path_separator;
+#endif
+}
 
 void make_all_directories(const std::string& path)
 {
@@ -194,7 +206,15 @@ std::string get_relative_path(const std::string& filename, const std::string& ba
   auto itFrom = baseDirs.begin();
   auto itTo = toParts.begin();
 
-  while (itFrom != baseDirs.end() && itTo != toParts.end() && *itFrom == *itTo) {
+  while (itFrom != baseDirs.end() &&
+         itTo != toParts.end()
+#if LAF_LINUX
+         // The Linux file system is case sensitive
+         && *itFrom == *itTo
+#else
+         && base::string_to_lower(*itFrom) == base::string_to_lower(*itTo)
+#endif
+  ) {
     ++itFrom;
     ++itTo;
   }
