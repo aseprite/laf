@@ -30,9 +30,10 @@ int app_main(int argc, char* argv[])
 #endif
   }
   switch (p.arch) {
-    case base::Platform::Arch::x86:   std::printf(" (x86)"); break;
-    case base::Platform::Arch::x64:   std::printf(" (x64)"); break;
-    case base::Platform::Arch::arm64: std::printf(" (arm64)"); break;
+    case base::Platform::Arch::x86:     std::printf(" (x86)"); break;
+    case base::Platform::Arch::x64:     std::printf(" (x64)"); break;
+    case base::Platform::Arch::arm64:   std::printf(" (arm64)"); break;
+    case base::Platform::Arch::riscv64: std::printf(" (riscv64)"); break;
   }
   std::printf("\n");
   return 0;
