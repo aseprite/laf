@@ -29,6 +29,7 @@
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)app;
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)applicationWillResignActive:(NSNotification*)notification;
+- (void)applicationDidFinishLaunching:(NSNotification*)notification;
 - (void)applicationDidBecomeActive:(NSNotification*)notification;
 - (void)applicationDidHide:(NSNotification*)notification;
 - (void)applicationDidUnhide:(NSNotification*)notification;

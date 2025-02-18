@@ -106,6 +106,13 @@
     [ViewOSX updateKeyFlags:event];
 }
 
+- (void)applicationDidFinishLaunching:(NSNotification*)notification
+{
+  // We do not want that the [NSApplication run] call made from
+  // AppOSX::Impl::finishLaunching() blocks.
+  [NSApp stop:nil];
+}
+
 - (void)applicationDidBecomeActive:(NSNotification*)notification
 {
   for (id window : [NSApp windows]) {
