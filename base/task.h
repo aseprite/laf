@@ -67,6 +67,10 @@ public:
 
   bool running() const { return m_running; }
 
+  // Returns true when the task is enqueued in the thread pool's work queue,
+  // and false when the task is actually being executed.
+  bool enqueued() const { return m_enqueued; }
+
   // Returns true when the task is completed (whether it was
   // canceled or not). If this is true, it's safe to delete the task
   // instance (it will not be used anymore by any othe background
@@ -77,6 +81,7 @@ private:
   void in_worker_thread();
 
   std::atomic<bool> m_running;
+  std::atomic<bool> m_enqueued;
   std::atomic<bool> m_completed;
   task_token m_token;
   func_t m_execute;

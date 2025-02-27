@@ -36,6 +36,7 @@ task_token& task::start(thread_pool& pool)
 
   // Reset flags for a running task
   m_running = true;
+  m_enqueued = true;
   m_completed = false;
   m_token.reset();
 
@@ -45,6 +46,7 @@ task_token& task::start(thread_pool& pool)
 
 void task::in_worker_thread()
 {
+  m_enqueued = false;
   try {
     if (!m_token.canceled())
       m_execute(m_token);
