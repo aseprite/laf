@@ -58,6 +58,8 @@ void task::in_worker_thread()
   // This must be the latest statement in the worker thread (see
   // task::complete() comment)
   m_completed = true;
+  if (m_done)
+    m_done(m_token);
 }
 
 } // namespace base

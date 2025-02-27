@@ -27,6 +27,7 @@ public:
 
   bool canceled() const { return m_canceled; }
   float progress() const { return m_progress; }
+  bool done() const { return m_canceled || m_progress == m_progress_max; }
 
   void cancel() { m_canceled = true; }
   void set_progress(float p)
@@ -60,6 +61,7 @@ public:
   ~task();
 
   void on_execute(func_t&& f) { m_execute = std::move(f); }
+  void on_done(func_t&& f) { m_done = std::move(f); }
 
   task_token& start(thread_pool& pool);
 
@@ -78,6 +80,7 @@ private:
   std::atomic<bool> m_completed;
   task_token m_token;
   func_t m_execute;
+  func_t m_done = nullptr;
 };
 
 } // namespace base
