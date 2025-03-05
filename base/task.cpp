@@ -50,8 +50,14 @@ void task::in_worker_thread()
 
   m_state = state::FINISHED;
 
-  if (m_finished)
-    m_finished(m_token);
+  if (m_finished) {
+    try {
+      m_finished(m_token);
+    }
+    catch (const std::exception& ex) {
+      LOG(ERROR, "Exception executing 'finished' callback: %s\n", ex.what());
+    }
+  }
 }
 
 } // namespace base
