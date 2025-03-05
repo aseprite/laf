@@ -55,6 +55,13 @@ private:
 
 class task {
 public:
+  enum class state {
+    READY,    // task is created an ready to be started
+    ENQUEUED, // task is enqueued in the thread pool waiting for execution
+    RUNNING,  // task is being executed
+    FINISHED  // task finished execution by either success, error, or cancellation
+  };
+
   typedef std::function<void(task_token&)> func_t;
 
   task();
@@ -65,24 +72,22 @@ public:
 
   task_token& start(thread_pool& pool);
 
-  bool running() const { return m_running; }
+  bool running() const { return m_state == state::RUNNING; }
 
   // Returns true when the task is enqueued in the thread pool's work queue,
   // and false when the task is actually being executed.
-  bool enqueued() const { return m_enqueued; }
+  bool enqueued() const { return m_state == state::ENQUEUED; }
 
   // Returns true when the task is completed (whether it was
   // canceled or not). If this is true, it's safe to delete the task
-  // instance (it will not be used anymore by any othe background
+  // instance (it will not be used anymore by any other background
   // thread).
-  bool completed() const { return m_completed; }
+  bool completed() const { return m_state == state::FINISHED; }
 
 private:
   void in_worker_thread();
 
-  std::atomic<bool> m_running;
-  std::atomic<bool> m_enqueued;
-  std::atomic<bool> m_completed;
+  std::atomic<state> m_state;
   task_token m_token;
   func_t m_execute;
   func_t m_finished = nullptr;
