@@ -9,9 +9,9 @@
 #pragma once
 
 #include <condition_variable>
+#include <deque>
 #include <functional>
 #include <mutex>
-#include <queue>
 #include <thread>
 #include <vector>
 
@@ -19,10 +19,27 @@ namespace base {
 
 class thread_pool {
 public:
+  class work {
+    friend class thread_pool;
+
+  public:
+    work(std::function<void()>&& func) { m_func = std::move(func); }
+
+  private:
+    std::function<void()> m_func = nullptr;
+  };
+
+  typedef std::unique_ptr<work> work_ptr;
+
   thread_pool(const size_t n);
   ~thread_pool();
 
-  void execute(std::function<void()>&& func);
+  const work* execute(std::function<void()>&& func);
+
+  // Tries to skip the work if it was not started yet, in other words, it
+  // removes the specified work from the queue if possible. Returns true if it
+  // was able to do so, or false otherwise.
+  bool try_skip(const work* w);
 
   // Waits until the queue is empty.
   void wait_all();
@@ -39,7 +56,7 @@ private:
   std::mutex m_mutex;
   std::condition_variable m_cv;
   std::condition_variable m_cvWait;
-  std::queue<std::function<void()>> m_work;
+  std::deque<work_ptr> m_work;
   int m_doingWork;
 };
 

@@ -27,7 +27,6 @@ public:
 
   bool canceled() const { return m_canceled; }
   float progress() const { return m_progress; }
-  bool finished() const { return m_canceled || m_progress == m_progress_max; }
 
   void cancel() { m_canceled = true; }
   void set_progress(float p)
@@ -51,6 +50,7 @@ private:
   std::atomic<bool> m_canceled;
   std::atomic<float> m_progress;
   float m_progress_min, m_progress_max;
+  const thread_pool::work* m_work = nullptr;
 };
 
 class task {
@@ -71,6 +71,7 @@ public:
   void on_finished(func_t&& f) { m_finished = std::move(f); }
 
   task_token& start(thread_pool& pool);
+  bool try_skip(thread_pool& pool);
 
   bool running() const { return m_state == state::RUNNING; }
 
@@ -86,6 +87,7 @@ public:
 
 private:
   void in_worker_thread();
+  void call_finished();
 
   std::atomic<state> m_state;
   task_token m_token;

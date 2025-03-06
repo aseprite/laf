@@ -33,8 +33,31 @@ task_token& task::start(thread_pool& pool)
   m_state = state::ENQUEUED;
   m_token.reset();
 
-  pool.execute([this] { in_worker_thread(); });
+  m_token.m_work = pool.execute([this] { in_worker_thread(); });
   return m_token;
+}
+
+bool task::try_skip(thread_pool& pool)
+{
+  bool skipped = pool.try_skip(m_token.m_work);
+  if (skipped) {
+    m_token.m_canceled = true;
+    call_finished();
+  }
+
+  return skipped;
+}
+
+void task::call_finished()
+{
+  if (m_finished) {
+    try {
+      m_finished(m_token);
+    }
+    catch (const std::exception& ex) {
+      LOG(ERROR, "Exception executing 'finished' callback: %s\n", ex.what());
+    }
+  }
 }
 
 void task::in_worker_thread()
@@ -50,14 +73,7 @@ void task::in_worker_thread()
 
   m_state = state::FINISHED;
 
-  if (m_finished) {
-    try {
-      m_finished(m_token);
-    }
-    catch (const std::exception& ex) {
-      LOG(ERROR, "Exception executing 'finished' callback: %s\n", ex.what());
-    }
-  }
+  call_finished();
 }
 
 } // namespace base

@@ -26,12 +26,27 @@ thread_pool::~thread_pool()
   join_all();
 }
 
-void thread_pool::execute(std::function<void()>&& func)
+const thread_pool::work* thread_pool::execute(std::function<void()>&& func)
 {
+  thread_pool::work_ptr work = std::make_unique<thread_pool::work>(std::move(func));
+  const thread_pool::work* result = work.get();
   const std::unique_lock lock(m_mutex);
   ASSERT(m_running);
-  m_work.push(std::move(func));
+  m_work.push_back(std::move(work));
   m_cv.notify_one();
+  return result;
+}
+
+bool thread_pool::try_skip(const work* w)
+{
+  std::unique_lock<std::mutex> lock(m_mutex);
+  for (auto it = m_work.begin(); it != m_work.end(); ++it) {
+    if (w == it->get()) {
+      m_work.erase(it);
+      return true;
+    }
+  }
+  return false;
 }
 
 void thread_pool::wait_all()
@@ -79,9 +94,9 @@ void thread_pool::worker()
       m_cv.wait(lock, [this]() -> bool { return !m_running || !m_work.empty(); });
       running = m_running;
       if (m_running && !m_work.empty()) {
-        func = std::move(m_work.front());
+        func = std::move(m_work.front()->m_func);
         ++m_doingWork;
-        m_work.pop();
+        m_work.pop_front();
       }
     }
     try {
