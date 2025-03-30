@@ -266,7 +266,7 @@ WindowWin::WindowWin(const WindowSpec& spec)
 
   if (winApi.GetWindowDpiAwarenessContext) {
     double scaleFactor = winApi.GetDpiForWindow(m_hwnd) / (double) USER_DEFAULT_SCREEN_DPI;
-    m_scale = std::max(1, (int)(m_baseScale * scaleFactor + 0.51));
+    m_scale = std::ceil(m_baseScale * scaleFactor);
   }
 
   // This flag is used to avoid calling T::resizeImpl() when we
