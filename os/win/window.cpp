@@ -977,7 +977,7 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
 
     case WM_DPICHANGED: {
       double scaleFactor = HIWORD(wparam) / (double) USER_DEFAULT_SCREEN_DPI;
-      m_scale = std::max(1, (int)(m_baseScale * scaleFactor + 0.51));
+      m_scale = std::ceil(m_baseScale * scaleFactor);
 
       RECT* prcNewWindow = (RECT*)lparam;
       SetWindowPos(m_hwnd,
