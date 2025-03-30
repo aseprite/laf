@@ -370,7 +370,7 @@ void WindowWin::setScale(int scale)
   double scaleFactor = m_scale / (double) m_baseScale;
   m_baseScale = scale;
   // round to nearest integer, rounding 0.5 up
-  m_scale = std::max(1, (int)(scale * scaleFactor + 0.51));
+  m_scale = std::ceil(m_baseScale * scaleFactor);
 
   // Align window size to new scale
   {
