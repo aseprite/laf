@@ -72,12 +72,20 @@ public:
   };
 
   typedef std::function<void(task_token&)> func_t;
+  // Type for the "finished" callback function. A const reference to a copy of
+  // the token is received to allow safe destruction of the task inside the
+  // callback, and to let the caller know that the token cannot be modified
+  // (because there is no point in updating the token after task finalization)
   typedef std::function<void(const task_token&)> finfunc_t;
 
   task();
   ~task();
 
   void on_execute(func_t&& f) { m_execute = std::move(f); }
+  // Sets a callback that will be called after logical finalization of the task.
+  // Useful for signaling task finalization instead of using polling techniques
+  // to know if the task finished. Also, it can be used to destroy the task
+  // safely.
   void on_finished(finfunc_t&& f) { m_finished = std::move(f); }
 
   task_token& start(thread_pool& pool);

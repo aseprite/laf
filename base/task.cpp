@@ -42,12 +42,17 @@ bool task::try_pop(thread_pool& pool)
   bool popped = pool.try_pop(m_token.m_work);
   if (popped) {
     m_token.m_canceled = true;
+    // The task is not waiting for execution any more, we can safely execute the
+    // finished callback. Note that at this point the task remains in
+    // ENQUEUED state, this can be used to let the caller know that the task was
+    // never run.
     call_finished();
   }
 
   return popped;
 }
 
+// Executes the "finished" callback only if it was set.
 void task::call_finished()
 {
   if (m_finished) {
@@ -74,6 +79,8 @@ void task::in_worker_thread()
 
   m_state = state::FINISHED;
 
+  // The task finished execution, now we can call the finished callback safely
+  // without worrying if the task is destroyed there.
   call_finished();
 }
 
