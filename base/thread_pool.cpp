@@ -37,7 +37,7 @@ const thread_pool::work* thread_pool::execute(std::function<void()>&& func)
   return result;
 }
 
-bool thread_pool::try_skip(const work* w)
+bool thread_pool::try_pop(const work* w)
 {
   std::unique_lock<std::mutex> lock(m_mutex);
   for (auto it = m_work.begin(); it != m_work.end(); ++it) {

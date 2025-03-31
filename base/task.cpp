@@ -37,15 +37,15 @@ task_token& task::start(thread_pool& pool)
   return m_token;
 }
 
-bool task::try_skip(thread_pool& pool)
+bool task::try_pop(thread_pool& pool)
 {
-  bool skipped = pool.try_skip(m_token.m_work);
-  if (skipped) {
+  bool popped = pool.try_pop(m_token.m_work);
+  if (popped) {
     m_token.m_canceled = true;
     call_finished();
   }
 
-  return skipped;
+  return popped;
 }
 
 void task::call_finished()

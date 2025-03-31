@@ -71,7 +71,7 @@ public:
   void on_finished(func_t&& f) { m_finished = std::move(f); }
 
   task_token& start(thread_pool& pool);
-  bool try_skip(thread_pool& pool);
+  bool try_pop(thread_pool& pool);
 
   bool running() const { return m_state == state::RUNNING; }
 

@@ -36,10 +36,9 @@ public:
 
   const work* execute(std::function<void()>&& func);
 
-  // Tries to skip the work if it was not started yet, in other words, it
-  // removes the specified work from the queue if possible. Returns true if it
+  // Removes the specified work from the queue if possible. Returns true if it
   // was able to do so, or false otherwise.
-  bool try_skip(const work* w);
+  bool try_pop(const work* w);
 
   // Waits until the queue is empty.
   void wait_all();
