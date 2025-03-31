@@ -41,6 +41,15 @@ public:
   }
 
 private:
+  task_token(const task_token& token)
+  {
+    m_canceled.store(token.m_canceled);
+    m_progress.store(token.m_progress);
+    m_progress_min = token.m_progress_min;
+    m_progress_max = token.m_progress_max;
+    m_work = token.m_work;
+  }
+
   void reset()
   {
     m_canceled = false;
@@ -63,12 +72,13 @@ public:
   };
 
   typedef std::function<void(task_token&)> func_t;
+  typedef std::function<void(const task_token&)> finfunc_t;
 
   task();
   ~task();
 
   void on_execute(func_t&& f) { m_execute = std::move(f); }
-  void on_finished(func_t&& f) { m_finished = std::move(f); }
+  void on_finished(finfunc_t&& f) { m_finished = std::move(f); }
 
   task_token& start(thread_pool& pool);
   bool try_pop(thread_pool& pool);
@@ -92,7 +102,7 @@ private:
   std::atomic<state> m_state;
   task_token m_token;
   func_t m_execute;
-  func_t m_finished = nullptr;
+  finfunc_t m_finished = nullptr;
 };
 
 } // namespace base

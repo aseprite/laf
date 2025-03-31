@@ -52,7 +52,8 @@ void task::call_finished()
 {
   if (m_finished) {
     try {
-      m_finished(m_token);
+      task_token token = m_token;
+      m_finished(token);
     }
     catch (const std::exception& ex) {
       LOG(ERROR, "Exception executing 'finished' callback: %s\n", ex.what());
