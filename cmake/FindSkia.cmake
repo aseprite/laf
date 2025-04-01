@@ -138,11 +138,10 @@ if(NOT ZLIB_LIBRARIES)
 
   include(ExternalProject)
   ExternalProject_Add(zlib-project
-    URL https://github.com/aseprite/zlib/archive/refs/tags/v1.2.12.zip
-    DOWNLOAD_NAME zlib-1.2.12.zip
-    URL_HASH SHA1=35c02072f6e3d673f01df54735d5b6af786e0e84
-    PREFIX "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib"
-    INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib"
+    GIT_REPOSITORY   https://github.com/aseprite/zlib.git
+    GIT_TAG          51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf
+    PREFIX           "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib"
+    INSTALL_DIR      "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib"
     BUILD_BYPRODUCTS "${ZLIB_LIB_FILE}"
     CMAKE_CACHE_ARGS ${LAF_ARGS_FOR_EXTERNAL_PROJECT})
 
