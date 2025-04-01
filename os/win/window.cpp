@@ -397,8 +397,16 @@ bool WindowWin::isVisible() const
 void WindowWin::setVisible(bool visible)
 {
   if (visible) {
-    if (m_activate)
-      ShowWindow(m_hwnd, SW_SHOWNORMAL);
+    m_firstVisible = true;
+
+    if (m_activate) {
+      if (m_startMaximized) {
+        ShowWindow(m_hwnd, SW_SHOWMAXIMIZED);
+        m_startMaximized = false;
+      }
+      else
+        ShowWindow(m_hwnd, SW_SHOWNORMAL);
+    }
     else
       ShowWindow(m_hwnd, SW_SHOWNOACTIVATE);
 
@@ -415,6 +423,14 @@ void WindowWin::activate()
 
 void WindowWin::maximize()
 {
+  if (!m_firstVisible) {
+    // If we have never flipped the display or set the window to be visible, maximize() becomes a
+    // flag so that ShowWindow is called with SW_SHOWMAXIMIZED when we have something ready to
+    // render, avoids a white screen.
+    m_startMaximized = true;
+    return;
+  }
+
   if (!isMaximized())
     ShowWindow(m_hwnd, SW_MAXIMIZE);
   else

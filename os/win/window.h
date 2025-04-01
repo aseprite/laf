@@ -259,6 +259,9 @@ private:
   bool m_borderless;
   bool m_fixingPos;
   bool m_activate;
+
+  bool m_firstVisible = false;
+  bool m_startMaximized = false;
 };
 
 } // namespace os
