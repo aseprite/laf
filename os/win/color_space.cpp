@@ -15,12 +15,22 @@
 #include "base/string.h"
 #include "os/system.h"
 
+#include <unordered_map>
+
 #include <windows.h>
 
 namespace os {
 
+std::unordered_map<HMONITOR, std::string> g_iccFilenameCache;
+std::unordered_map<std::string, os::ColorSpaceRef> g_colorspaceCache;
+
 std::string get_hmonitor_icc_filename(HMONITOR monitor)
 {
+  const auto& it = g_iccFilenameCache.find(monitor);
+  if (it != g_iccFilenameCache.end()) {
+    return it->second;
+  }
+
   std::string iccFilename;
   MONITORINFOEX mi;
   ZeroMemory(&mi, sizeof(MONITORINFOEX));
@@ -30,8 +40,10 @@ std::string get_hmonitor_icc_filename(HMONITOR monitor)
   if (hdc) {
     DWORD length = MAX_PATH;
     std::vector<TCHAR> str(length + 1);
-    if (GetICMProfile(hdc, &length, &str[0]))
+    if (GetICMProfile(hdc, &length, &str[0])) {
       iccFilename = base::to_utf8(&str[0]);
+      g_iccFilenameCache.emplace(monitor, iccFilename);
+    }
     DeleteDC(hdc);
   }
   return iccFilename;
@@ -39,6 +51,11 @@ std::string get_hmonitor_icc_filename(HMONITOR monitor)
 
 os::ColorSpaceRef get_colorspace_from_icc_file(const std::string& iccFilename)
 {
+  const auto& it = g_colorspaceCache.find(iccFilename);
+  if (it != g_colorspaceCache.end()) {
+    return it->second;
+  }
+
   auto system = System::instance();
   ASSERT(system);
   if (!system)
@@ -48,6 +65,7 @@ os::ColorSpaceRef get_colorspace_from_icc_file(const std::string& iccFilename)
   auto osCS = system->makeColorSpace(gfx::ColorSpace::MakeICC(std::move(buf)));
   if (osCS) {
     osCS->gfxColorSpace()->setName("Display Profile: " + base::get_file_title(iccFilename));
+    g_colorspaceCache.emplace(iccFilename, osCS);
   }
   return osCS;
 }
