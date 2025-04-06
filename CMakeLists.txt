@@ -1,5 +1,5 @@
 # LAF
-# Copyright (C) 2019-2024  Igara Studio S.A.
+# Copyright (C) 2019-2025  Igara Studio S.A.
 # Copyright (C) 2016-2018  David Capello
 
 cmake_minimum_required(VERSION 3.16)
@@ -31,6 +31,10 @@ endif()
 option(LAF_WITH_EXAMPLES "Enable LAF examples" ON)
 option(LAF_WITH_TESTS "Enable LAF tests" ON)
 option(LAF_WITH_CLIP "Enable clip module (required for future drag-and-drop feature)" ON)
+if(WIN32)
+  option(LAF_WITH_DLGS_PROC "Enable laf-dlgs-process.exe for Windows to open the FileDialog through an external process" OFF)
+  set(LAF_DLGS_PROC_NAME "dlgs_process" CACHE STRING "Name of the process to show native dialogs")
+endif()
 set(LAF_BACKEND ${LAF_DEFAULT_BACKEND} CACHE STRING "Select laf backend")
 set_property(CACHE LAF_BACKEND PROPERTY STRINGS "none" "skia")
 
