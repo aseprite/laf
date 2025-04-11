@@ -1,5 +1,5 @@
 // LAF Text Library
-// Copyright (c) 2024  Igara Studio S.A.
+// Copyright (c) 2024-2025  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -124,12 +124,10 @@ public:
             uint32_t clusters = info.clusters[i];
             paint.color(m_fg);
             static_cast<os::SkiaSurface*>(m_surface)->canvas().drawGlyphs(
-              1,
-              &glyphs,
-              &positions,
-              &clusters,
-              utf8text.size(),
-              utf8text.data(),
+              {&glyphs, 1},
+              {&positions, 1},
+              {&clusters, 1},
+              SkSpan(utf8text),
               os::to_skia(m_origin + info.point),
               static_cast<SkiaFont*>(info.font.get())->skFont(),
               paint.skPaint());
