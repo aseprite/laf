@@ -660,6 +660,11 @@ os::DragEvent newDragEvent(id<NSDraggingInfo> sender)
   os::DragEvent ev = newDragEvent(sender);
   os::Window* window = [target impl];
   window->notifyDragEnter(ev);
+  // Send an empty event just for waking up the queue in case it was waiting for
+  // events. This is useful for flushing pending application level events (like
+  // painting events) that might have been generated during the DragEnter operation.
+  os::Event evt;
+  [self queueEvent:evt];
   return as_nsdragoperation(ev.dropResult());
 }
 
@@ -675,6 +680,11 @@ os::DragEvent newDragEvent(id<NSDraggingInfo> sender)
   ev.dropResult(as_dropoperation(value));
   os::Window* window = [target impl];
   window->notifyDrag(ev);
+  // Send an empty event just for waking up the queue in case it was waiting for
+  // events. This is useful for flushing pending application level events (like
+  // painting events) that might have been generated during the Drag operation.
+  os::Event evt;
+  [self queueEvent:evt];
   return as_nsdragoperation(ev.dropResult());
 }
 
@@ -688,6 +698,11 @@ os::DragEvent newDragEvent(id<NSDraggingInfo> sender)
   os::DragEvent ev = newDragEvent(sender);
   os::Window* window = [target impl];
   window->notifyDragLeave(ev);
+  // Send an empty event just for waking up the queue in case it was waiting for
+  // events. This is useful for flushing pending application level events (like
+  // painting events) that might have been generated during the DragLeave.
+  os::Event evt;
+  [self queueEvent:evt];
 }
 
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
@@ -710,6 +725,11 @@ os::DragEvent newDragEvent(id<NSDraggingInfo> sender)
   os::DragEvent ev = newDragEvent(sender);
   os::Window* window = [target impl];
   window->notifyDrop(ev);
+  // Send an empty event just for waking up the queue in case it was waiting for
+  // events. This is useful for flushing pending application level events (like
+  // painting events) that might have been generated during the Drop operation.
+  os::Event evt;
+  [self queueEvent:evt];
   return ev.acceptDrop();
 }
 
