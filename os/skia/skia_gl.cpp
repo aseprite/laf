@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2022-2024  Igara Studio S.A.
+// Copyright (C) 2022-2025  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -14,7 +14,7 @@
 #if SK_SUPPORT_GPU
 
   #include "include/core/SkSurface.h"
-  #include "include/gpu/GrBackendSurface.h"
+  #include "include/gpu/ganesh/GrBackendSurface.h"
   #include "include/gpu/ganesh/SkSurfaceGanesh.h"
   #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
   #include "include/gpu/ganesh/gl/GrGLDirectContext.h"
