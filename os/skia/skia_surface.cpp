@@ -27,11 +27,11 @@
 #include "include/core/SkPixmap.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkStream.h"
-#include "include/private/SkColorData.h"
+#include "src/core/SkColorData.h"
 
 #if SK_SUPPORT_GPU
-  #include "include/gpu/GrBackendSurface.h"
-  #include "include/gpu/GrDirectContext.h"
+  #include "include/gpu/ganesh/GrBackendSurface.h"
+  #include "include/gpu/ganesh/GrDirectContext.h"
   #include "include/gpu/ganesh/SkImageGanesh.h"
   #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
   #include "src/image/SkSurface_Raster.h"
@@ -838,9 +838,9 @@ const SkImage* SkiaSurface::getOrCreateTextureImage() const
   if (m_cachedGen && m_cachedGen != m_bitmap.getGenerationID())
     m_image.reset();
 
-  if (m_image && m_image->isValid(win->sk_grCtx()))
+  if (m_image && m_image->isValid((SkRecorder*)win->sk_grCtx()))
     return m_image.get();
-  if (uploadBitmapAsTexture() && m_image && m_image->isValid(win->sk_grCtx()))
+  if (uploadBitmapAsTexture() && m_image && m_image->isValid((SkRecorder*)win->sk_grCtx()))
     return m_image.get();
   return nullptr;
 }

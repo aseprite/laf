@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2021-2022  Igara Studio S.A.
+// Copyright (C) 2021-2025  Igara Studio S.A.
 // Copyright (C) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -14,7 +14,7 @@
 #include "os/win/window.h"
 
 #if SK_SUPPORT_GPU
-  #include "include/gpu/gl/GrGLInterface.h"
+  #include "include/gpu/ganesh/gl/GrGLInterface.h"
   #include "os/gl/gl_context.h"
 #endif
 

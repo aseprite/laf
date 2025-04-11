@@ -1,4 +1,4 @@
-# Copyright (C) 2019-2024  Igara Studio S.A.
+# Copyright (C) 2019-2025  Igara Studio S.A.
 #
 # This file is released under the terms of the MIT license.
 # Read LICENSE.txt for more information.
@@ -37,7 +37,8 @@ else()
 endif()
 
 # Skia modules
-find_library(SKUNICODE_LIBRARY skunicode PATH "${SKIA_LIBRARY_DIR}")
+find_library(SKUNICODE_CORE_LIBRARY skunicode_core PATH "${SKIA_LIBRARY_DIR}")
+find_library(SKUNICODE_ICU_LIBRARY skunicode_icu PATH "${SKIA_LIBRARY_DIR}")
 find_library(SKSHAPER_LIBRARY skshaper PATH "${SKIA_LIBRARY_DIR}")
 
 # Check that Skia is compiled for the same CPU architecture
@@ -242,7 +243,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_library(skunicode INTERFACE)
-target_link_libraries(skunicode INTERFACE ${SKUNICODE_LIBRARY})
+target_link_libraries(skunicode INTERFACE ${SKUNICODE_ICU_LIBRARY} ${SKUNICODE_CORE_LIBRARY})
 target_compile_definitions(skunicode INTERFACE
   SK_UNICODE_AVAILABLE)
 

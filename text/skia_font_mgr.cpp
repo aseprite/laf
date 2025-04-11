@@ -17,6 +17,7 @@
   #include "include/ports/SkFontMgr_mac_ct.h"
 #elif LAF_LINUX
   #include "include/ports/SkFontMgr_fontconfig.h"
+  #include "include/ports/SkFontScanner_FreeType.h"
 #endif
 
 namespace text {
@@ -117,7 +118,7 @@ SkiaFontMgr::SkiaFontMgr()
 #elif LAF_MACOS
   m_skFontMgr = SkFontMgr_New_CoreText(nullptr);
 #elif LAF_LINUX
-  m_skFontMgr = SkFontMgr_New_FontConfig(nullptr);
+  m_skFontMgr = SkFontMgr_New_FontConfig(nullptr, SkFontScanner_Make_FreeType());
 #endif
   if (!m_skFontMgr)
     m_skFontMgr = SkFontMgr::RefEmpty();
