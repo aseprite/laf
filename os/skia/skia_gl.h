@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2022  Igara Studio S.A.
+// Copyright (C) 2022-2025  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -15,8 +15,8 @@
   #include "include/core/SkColorSpace.h"
   #include "include/core/SkRefCnt.h"
   #include "include/core/SkSurface.h"
-  #include "include/gpu/GrDirectContext.h"
-  #include "include/gpu/gl/GrGLInterface.h"
+  #include "include/gpu/ganesh/GrDirectContext.h"
+  #include "include/gpu/ganesh/gl/GrGLInterface.h"
 #endif
 
 namespace os {
