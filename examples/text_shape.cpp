@@ -151,7 +151,7 @@ void draw_window(System* system,
 
     pos.y -= metrics.ascent;
     const SkScalar intervals[] = { 4.0f, 4.0f };
-    p.skPaint().setPathEffect(SkDashPathEffect::Make(intervals, 2, 0.0f));
+    p.skPaint().setPathEffect(SkDashPathEffect::Make(intervals, 0.0f));
     surface->drawLine(pos, gfx::PointF(rc.w, pos.y), p);
   }
 

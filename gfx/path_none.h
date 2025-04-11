@@ -1,5 +1,5 @@
 // LAF Gfx Library
-// Copyright (c) 2020-2023  Igara Studio S.A.
+// Copyright (c) 2020-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -30,10 +30,9 @@ public:
   Path& rect(const Rect& rc) { return *this; }
   Path& roundedRect(const Rect& rc, float rx, float ry) { return *this; }
   Path& close() { return *this; }
-  void offset(float dx, float dy, Path* dst) const {}
   void offset(float dx, float dy) {}
-  void transform(const Matrix& matrix, Path* dst) {}
   void transform(const Matrix& matrix) {}
+  Path snapshot(const Matrix& matrix) const { return {}; }
   RectF bounds() const { return RectF(); }
 };
 

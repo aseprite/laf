@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2018-2025  Igara Studio S.A.
+// Copyright (c) 2018-present  Igara Studio S.A.
 // Copyright (c) 2016-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -27,11 +27,11 @@
 #include "include/core/SkPixmap.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkStream.h"
-#include "include/private/SkColorData.h"
+#include "src/core/SkColorData.h"
 
 #if SK_SUPPORT_GPU
-  #include "include/gpu/GrBackendSurface.h"
-  #include "include/gpu/GrDirectContext.h"
+  #include "include/gpu/ganesh/GrBackendSurface.h"
+  #include "include/gpu/ganesh/GrDirectContext.h"
   #include "include/gpu/ganesh/SkImageGanesh.h"
   #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
   #include "src/image/SkSurface_Raster.h"
@@ -74,19 +74,17 @@ Surface::ColorChannelsOrder Surface::getNativeColorChannelsOrder()
     return ColorChannelsOrder::BGR;
 }
 
-SkiaSurface::SkiaSurface() : m_surface(nullptr), m_colorSpace(nullptr), m_canvas(nullptr), m_lock(0)
+SkiaSurface::SkiaSurface()
 {
 }
 
-SkiaSurface::SkiaSurface(const sk_sp<SkSurface>& surface)
-  : m_surface(surface)
-  , m_colorSpace(nullptr)
-  , m_canvas(nullptr)
-  , m_lock(0)
+SkiaSurface::SkiaSurface(const sk_sp<SkSurface>& surface) : m_surface(surface)
 {
   ASSERT(m_surface);
-  if (m_surface)
+  if (m_surface) {
+    m_canvasPtr.reset();
     m_canvas = m_surface->getCanvas();
+  }
 }
 
 SkiaSurface::~SkiaSurface()
@@ -139,10 +137,8 @@ void SkiaSurface::createWithBitmap(SkBitmap&& bmp, const os::ColorSpaceRef& cs)
 
 void SkiaSurface::destroy()
 {
-  if (!m_surface) {
-    delete m_canvas;
-    m_canvas = nullptr;
-  }
+  m_canvasPtr.reset();
+  m_canvas = nullptr;
 }
 
 void SkiaSurface::flush() const
@@ -742,8 +738,11 @@ void SkiaSurface::swapBitmap(SkBitmap& other)
 {
   ASSERT(!m_surface);
   m_bitmap.swap(other);
-  delete m_canvas;
-  m_canvas = new SkCanvas(m_bitmap);
+
+  m_canvasPtr.reset();
+  m_canvasPtr =
+    SkCanvas::MakeRasterDirect(m_bitmap.info(), m_bitmap.getPixels(), m_bitmap.rowBytes());
+  m_canvas = m_canvasPtr.get();
 }
 
 // static
@@ -753,8 +752,7 @@ Ref<Surface> SkiaSurface::loadSurface(const char* filename)
   if (!f)
     return nullptr;
 
-  std::unique_ptr<SkCodec> codec(
-    SkCodec::MakeFromStream(std::unique_ptr<SkFILEStream>(new SkFILEStream(f))));
+  auto codec = SkCodec::MakeFromStream(std::make_unique<SkFILEStream>(f));
   if (!codec)
     return nullptr;
 
@@ -838,9 +836,9 @@ const SkImage* SkiaSurface::getOrCreateTextureImage() const
   if (m_cachedGen && m_cachedGen != m_bitmap.getGenerationID())
     m_image.reset();
 
-  if (m_image && m_image->isValid(win->sk_grCtx()))
+  if (m_image && m_image->isValid((SkRecorder*)win->sk_grCtx()))
     return m_image.get();
-  if (uploadBitmapAsTexture() && m_image && m_image->isValid(win->sk_grCtx()))
+  if (uploadBitmapAsTexture() && m_image && m_image->isValid((SkRecorder*)win->sk_grCtx()))
     return m_image.get();
   return nullptr;
 }

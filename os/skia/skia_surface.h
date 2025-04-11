@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2018-2025  Igara Studio S.A.
+// Copyright (c) 2018-present  Igara Studio S.A.
 // Copyright (c) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -159,11 +159,12 @@ private:
   mutable uint32_t m_cachedGen = 0;
   mutable sk_sp<SkImage> m_image;
 #endif
-  sk_sp<SkSurface> m_surface;
-  ColorSpaceRef m_colorSpace;
-  SkCanvas* m_canvas;
+  sk_sp<SkSurface> m_surface = nullptr;
+  ColorSpaceRef m_colorSpace = nullptr;
+  std::unique_ptr<SkCanvas> m_canvasPtr;
+  SkCanvas* m_canvas = nullptr;
   SkPaint m_paint;
-  std::atomic<int> m_lock;
+  std::atomic<int> m_lock = 0;
 };
 
 } // namespace os
