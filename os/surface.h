@@ -38,6 +38,10 @@ using SurfaceRef = Ref<Surface>;
 
 class Surface : public RefCount {
 public:
+  enum class ColorChannelsOrder { RGB, BGR };
+
+  static ColorChannelsOrder getNativeColorChannelsOrder();
+
   virtual ~Surface() {}
   virtual int width() const = 0;
   virtual int height() const = 0;
