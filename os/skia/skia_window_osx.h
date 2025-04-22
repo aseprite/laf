@@ -45,7 +45,7 @@ public:
   void onChangeBackingProperties() override;
 
 private:
-  void paintGC(const gfx::Rect& rect);
+  void paintGC(const gfx::RectF& rect);
 
   bool m_closing = false;
 

@@ -192,7 +192,7 @@ void SkiaWindowOSX::onChangeBackingProperties()
     setColorSpace(colorSpace());
 }
 
-void SkiaWindowOSX::paintGC(const gfx::Rect& rect)
+void SkiaWindowOSX::paintGC(const gfx::RectF& rect)
 {
   if (!this->isInitialized())
     return;
@@ -201,7 +201,7 @@ void SkiaWindowOSX::paintGC(const gfx::Rect& rect)
     return;
 
   NSRect viewBounds = m_nsWindow.contentView.bounds;
-  int scale = this->scale();
+  float scale = this->scale();
 
   SkiaSurface* surface = static_cast<SkiaSurface*>(this->surface());
   if (!surface->isValid())
@@ -211,7 +211,7 @@ void SkiaWindowOSX::paintGC(const gfx::Rect& rect)
   const SkBitmap& origBitmap = surface->bitmap();
 
   SkBitmap bitmap;
-  if (scale == 1) {
+  if (scale == 1.0f) {
     // Create a subset to draw on the view
     if (!origBitmap.extractSubset(
           &bitmap,
