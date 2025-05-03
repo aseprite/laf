@@ -13,7 +13,12 @@ if [[ "$uname" =~ "MINGW32" ]] || [[ "$uname" =~ "MINGW64" ]] || [[ "$uname" =~ 
     cpu=x64
 elif [[ "$uname" == "Linux" ]] ; then
     is_linux=1
-    cpu=$(arch | xargs)
+    source /etc/os-release
+    if [[ "$ID_LIKE" == *"arch"* ]] ; then
+        cpu=$(uname -m | xargs)
+    else
+        cpu=$(arch | xargs)
+    fi
     if [[ "$cpu" == "x86_64" ]] ; then
         cpu=x64
     fi
