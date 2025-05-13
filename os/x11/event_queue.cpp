@@ -132,6 +132,8 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
   // key pressed.
   const bool removeRepeats = (!WindowX11::translateDeadKeys());
 
+  XEvent lastXMotion;
+  lastXMotion.type = 0;
   for (int i = 0; i < events; ++i) {
     XNextEvent(display, &event);
 
@@ -158,9 +160,30 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
       processX11Event(event2);
     }
     else {
+      // We discard most motion events because they are sent at a too high rate.
+      // Instead we can just keep the latest, and process it when appropriate.
+      if (event.type == MotionNotify) {
+        lastXMotion = event;
+        continue;
+      }
+
+      // When an Enter/Leave/ButtonPress/ButtonRelease is received we cannot
+      // delay the latest motion event further, because the order of the events must
+      // be preserved in these cases.
+      if (lastXMotion.type == MotionNotify &&
+          (event.type == EnterNotify || event.type == LeaveNotify || event.type == ButtonPress ||
+           event.type == ButtonRelease)) {
+        processX11Event(lastXMotion);
+        lastXMotion.type = 0;
+      }
+
       processX11Event(event);
     }
   }
+
+  // If there is a pending motion event, process it now.
+  if (lastXMotion.type == MotionNotify)
+    processX11Event(lastXMotion);
 
   if (!m_events.try_pop(ev))
     ev.setType(Event::None);
