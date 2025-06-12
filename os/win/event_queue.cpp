@@ -19,6 +19,9 @@
 
 namespace os {
 
+// static
+bool EventQueueWin::g_textInput = false;
+
 void EventQueueWin::queueEvent(const Event& ev)
 {
   m_events.push(ev);
@@ -60,11 +63,35 @@ void EventQueueWin::getEvent(Event& ev, double timeout)
       // messages. Dead keys are converted manually in the
       // WM_KEYDOWN processing on our WindowWin<T> class.
       //
+      // Unless we are processing a WM_KEYDOWN message with VK_PROCESSKEY,
+      // which is used to process IME (Input Method Editor) messages.
+      //
       // From MSDN TranslateMessage() documentation:
       //   "WM_KEYDOWN and WM_KEYUP combinations produce a WM_CHAR
       //   or WM_DEADCHAR message."
       // https://msdn.microsoft.com/en-us/library/windows/desktop/ms644955.aspx
-      if (msg.message != WM_KEYDOWN && msg.message != WM_KEYUP) {
+      //
+      // Keyboard Input documentation:
+      //    "the IME sets the virtual key value to VK_PROCESSKEY after
+      //    processing a key input message"
+      // https://learn.microsoft.com/en-us/windows/win32/learnwin32/keyboard-input
+      // https://learn.microsoft.com/en-us/windows/win32/api/imm/nf-imm-immgetvirtualkey
+      if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) {
+#if LAF_WITH_IME
+        if (msg.message == WM_KEYDOWN && msg.wParam == VK_PROCESSKEY) {
+          if (textInput()) {
+            // If we are in text input mode, we need to process the
+            // WM_KEYDOWN message to IME.
+            TranslateMessage(&msg);
+          }
+          else {
+            // If we are not in text input mode, ignore it.
+            msg.message = WM_NULL;
+          }
+        }
+#endif
+      }
+      else {
         TranslateMessage(&msg);
       }
       DispatchMessage(&msg);

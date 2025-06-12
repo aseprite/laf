@@ -36,6 +36,7 @@
 #include "os/event.h"
 #include "os/native_cursor.h"
 #include "os/win/color_space.h"
+#include "os/win/event_queue.h"
 #include "os/win/keys.h"
 #include "os/win/screen.h"
 #include "os/win/system.h"
@@ -160,7 +161,7 @@ WindowWin::WindowWin(const WindowSpec& spec)
   , m_scale(spec.scale())
   , m_isCreated(false)
   , m_adjustShadow(true)
-  , m_translateDeadKeys(false)
+  , m_textInput(false)
   , m_hasMouse(false)
   , m_captureMouse(false)
   , m_usePointerApi(false)
@@ -830,7 +831,11 @@ void WindowWin::setLayout(const std::string& layout)
 
 void WindowWin::setTextInput(bool state, const gfx::Point& screenCaretPos)
 {
-  m_translateDeadKeys = state;
+  m_textInput = state;
+#if LAF_WITH_IME
+  auto eventQueue = os::EventQueue::instance();
+  static_cast<os::EventQueueWin*>(eventQueue)->setTextInput(state);
+#endif
 
   // Here we clear dead keys so we don't get those keys in the new
   // "translate dead keys" state. E.g. If we focus a text entry
@@ -1701,7 +1706,7 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
           if (tu.isDeadKey()) {
             ev.setDeadKey(true);
             ev.setUnicodeChar(tu[0]);
-            if (!m_translateDeadKeys)
+            if (!m_textInput)
               tu.toUnicode(vk, scancode); // Call again to remove dead-key
           }
           else if (tu.size() > 0) {

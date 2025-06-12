@@ -96,6 +96,12 @@ if(WIN32)
     shlwapi psapi wininet comctl32 dbghelp dwmapi
     msimg32)
 
+  # Support IME to input CJK characters
+  IF (LAF_WITH_IME)
+    target_compile_definitions(laf-os PUBLIC
+      LAF_WITH_IME)
+  endif()
+
   # Don't define min/max() macros when including <windows.h>
   target_compile_options(laf-os PRIVATE -DNOMINMAX)
 
