@@ -67,7 +67,7 @@ public:
   std::string getLayout() override;
 
   void setLayout(const std::string& layout) override;
-  void setTranslateDeadKeys(bool state);
+  void setTextInput(bool state, const gfx::Point& screenCaretPos = {});
   void setInterpretOneFingerGestureAsMouseMovement(bool state) override;
   void onTabletOptionsChange();
 

@@ -82,9 +82,9 @@ public:
 
   NativeHandle nativeHandle() const override { return (NativeHandle)x11window(); }
 
-  void setTranslateDeadKeys(bool state) { g_translateDeadKeys = state; }
+  void setTextInput(bool state, const gfx::Point& screenCaretPos = {}) { g_textInput = state; }
 
-  static bool translateDeadKeys() { return g_translateDeadKeys; }
+  static bool textInput() { return g_textInput; }
 
   void processX11Event(XEvent& event);
   static WindowX11* getPointerFromHandle(::Window handle);
@@ -126,7 +126,7 @@ private:
   Event::MouseButton m_doubleClickButton;
   base::tick_t m_doubleClickTick;
 
-  static bool g_translateDeadKeys;
+  static bool g_textInput;
 };
 
 } // namespace os

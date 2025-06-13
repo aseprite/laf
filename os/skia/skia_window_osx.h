@@ -32,7 +32,7 @@ public:
 
   std::string getLayout() override { return ""; }
   void setLayout(const std::string& layout) override {}
-  void setTranslateDeadKeys(bool state);
+  void setTextInput(bool state, const gfx::Point& screenCaretPos = {});
 
   // WindowOSX overrides
   void onClose() override;

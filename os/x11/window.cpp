@@ -213,7 +213,7 @@ std::vector<Atom> get_atom_list_property(::Display* display,
 } // anonymous namespace
 
 // static
-bool WindowX11::g_translateDeadKeys = false;
+bool WindowX11::g_textInput = false;
 
 // static
 WindowX11* WindowX11::getPointerFromHandle(::Window handle)

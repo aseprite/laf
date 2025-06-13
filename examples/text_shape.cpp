@@ -174,7 +174,7 @@ int app_main(int argc, char* argv[])
   // Interpret dead keys + chars to compose unicode chars.  This is
   // useful for text editors (or when we focus a text editor in our
   // app, in this example we're always in the text editor).
-  system->setTranslateDeadKeys(true);
+  system->setTextInput(true);
 
   TextEdit edit;
   edit.text = "Hiragana ひらがな.";

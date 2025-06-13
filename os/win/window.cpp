@@ -828,7 +828,7 @@ void WindowWin::setLayout(const std::string& layout)
   }
 }
 
-void WindowWin::setTranslateDeadKeys(bool state)
+void WindowWin::setTextInput(bool state, const gfx::Point& screenCaretPos)
 {
   m_translateDeadKeys = state;
 

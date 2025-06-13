@@ -42,7 +42,7 @@ namespace {
 
 // Internal array of pressed keys used in isKeyPressed()
 int g_pressedKeys[kKeyScancodes];
-bool g_translateDeadKeys = false;
+bool g_textInput = false;
 UInt32 g_lastDeadKeyState = 0;
 NSCursor* g_emptyNsCursor = nil;
 Event::MouseButton g_lastMouseButton = Event::NoneButton;
@@ -276,7 +276,7 @@ using namespace os;
   if (scancode >= 0 && scancode < kKeyScancodes)
     g_pressedKeys[scancode] = (ev.unicodeChar() ? ev.unicodeChar() : 1);
 
-  if (g_translateDeadKeys) {
+  if (g_textInput) {
     strRef = get_unicode_from_key_code(event.keyCode, event.modifierFlags, &g_lastDeadKeyState);
     if (strRef) {
       int length = CFStringGetLength(strRef);
@@ -720,7 +720,7 @@ os::DragEvent newDragEvent(id<NSDraggingInfo> sender)
 
 - (void)setTranslateDeadKeys:(BOOL)state
 {
-  g_translateDeadKeys = (state ? true : false);
+  g_textInput = (state ? true : false);
   g_lastDeadKeyState = 0;
 }
 
