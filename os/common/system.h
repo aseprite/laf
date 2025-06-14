@@ -56,7 +56,7 @@ public:
   Ref<Cursor> makeCursor(const Surface*, const gfx::Point&, int) override { return nullptr; }
   bool isKeyPressed(KeyScancode) override { return false; }
   int getUnicodeFromScancode(KeyScancode) override { return 0; }
-  void setTranslateDeadKeys(bool) override {}
+  void setTextInput(bool, const gfx::Point&) override {}
   gfx::Point mousePosition() const override { return gfx::Point(0, 0); }
   void setMousePosition(const gfx::Point&) override {}
   gfx::Color getColorFromScreen(const gfx::Point&) const override { return gfx::ColorNone; }
