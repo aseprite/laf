@@ -25,6 +25,12 @@ if(WIN32)
     win/window.cpp
     win/window_dde.cpp
     win/wintab.cpp)
+
+  # Support IME to input CJK characters
+  IF (LAF_WITH_IME)
+    list(APPEND LAF_OS_SOURCES
+      win/ime_manager.cpp)
+  endif()
 elseif(APPLE)
   find_library(COCOA_LIBRARY Cocoa)
   find_library(CARBON_LIBRARY Carbon)

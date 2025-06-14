@@ -23,12 +23,8 @@ public:
   void getEvent(Event& ev, double timeout) override;
   void clearEvents();
 
-  void setTextInput(bool state) { g_textInput = state; }
-  bool textInput() const { return g_textInput; }
-
 private:
   base::concurrent_queue<Event> m_events;
-  static bool g_textInput;
 };
 
 using EventQueueImpl = EventQueueWin;

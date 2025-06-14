@@ -16,11 +16,9 @@
 #include "os/win/event_queue.h"
 
 #include "base/time.h"
+#include "os/win/ime_manager.h"
 
 namespace os {
-
-// static
-bool EventQueueWin::g_textInput = false;
 
 void EventQueueWin::queueEvent(const Event& ev)
 {
@@ -79,7 +77,7 @@ void EventQueueWin::getEvent(Event& ev, double timeout)
       if (msg.message == WM_KEYDOWN || msg.message == WM_KEYUP) {
 #if LAF_WITH_IME
         if (msg.message == WM_KEYDOWN && msg.wParam == VK_PROCESSKEY) {
-          if (textInput()) {
+          if (IMEManagerWin::instance()->textInput()) {
             // If we are in text input mode, we need to process the
             // WM_KEYDOWN message to IME.
             TranslateMessage(&msg);
