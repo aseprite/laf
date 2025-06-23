@@ -83,6 +83,7 @@ target_include_directories(laf-base PUBLIC
   ${LAF_LIST_DIR} ${LAF_BINARY_DIR})
 
 if(WIN32)
+  set(WINDOWS_VERSION "WS08" CACHE STRING "Set Windows Vista as the target version for compiling libarchive (Windows only)" FORCE)
   target_compile_definitions(laf-base PUBLIC LAF_WINDOWS
     # Windows Vista is the minimum supported platform but we're defining
     # Windows 10 to get the all constant/structure definitions.
