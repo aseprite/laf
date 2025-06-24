@@ -14,7 +14,7 @@ if [[ "$uname" =~ "MINGW32" ]] || [[ "$uname" =~ "MINGW64" ]] || [[ "$uname" =~ 
 elif [[ "$uname" == "Linux" ]] ; then
     is_linux=1
     source /etc/os-release
-    if [[ "$ID_LIKE" == *"arch"* ]] ; then
+    if [[ "$ID" == *"arch"* || "$ID_LIKE" == *"arch"* ]] ; then
         cpu=$(uname -m | xargs)
     else
         cpu=$(arch | xargs)
