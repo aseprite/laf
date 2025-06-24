@@ -27,7 +27,7 @@ public:
     , m_font(m_fontMgr->defaultFont(18))
     , m_lineHeight(m_font->metrics(nullptr))
   {
-    m_system->setTranslateDeadKeys(m_translateDeadKeys);
+    m_system->setTextInput(m_textInput);
     m_window->setTitle(titleBar());
 
     recalcMaxLines();
@@ -81,8 +81,8 @@ public:
           logLine("-- Next KeyDown with kKeyEsc will close the window --");
         }
         else if (ev.scancode() == kKeyD) {
-          m_translateDeadKeys = !m_translateDeadKeys;
-          m_system->setTranslateDeadKeys(m_translateDeadKeys);
+          m_textInput = !m_textInput;
+          m_system->setTextInput(m_textInput);
           m_window->setTitle(titleBar());
         }
         else {
@@ -131,7 +131,7 @@ private:
   std::string titleBar()
   {
     std::string title = "All Events";
-    if (m_translateDeadKeys)
+    if (m_textInput)
       title += " w/Dead Keys";
     return title;
   }
@@ -253,7 +253,7 @@ private:
   double m_brushSize = 4;
   double m_hue = 0.0;
   bool m_nextEscCloses = false;
-  bool m_translateDeadKeys = true;
+  bool m_textInput = true;
 };
 
 int app_main(int argc, char* argv[])

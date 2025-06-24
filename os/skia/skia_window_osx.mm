@@ -108,7 +108,7 @@ void SkiaWindowOSX::invalidateRegion(const gfx::Region& rgn)
   }
 }
 
-void SkiaWindowOSX::setTranslateDeadKeys(bool state)
+void SkiaWindowOSX::setTextInput(bool state, const gfx::Point& screenCaretPos)
 {
   ViewOSX* view = (ViewOSX*)m_nsWindow.contentView;
   [view setTranslateDeadKeys:(state ? YES : NO)];

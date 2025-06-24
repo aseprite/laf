@@ -130,7 +130,7 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
   // (shortcuts) so we can remove the repeats of a key
   // (KeyRelease/KeyPress pair events) that are sent when we keep a
   // key pressed.
-  const bool removeRepeats = (!WindowX11::translateDeadKeys());
+  const bool removeRepeats = (!WindowX11::textInput());
 
   for (int i = 0; i < events; ++i) {
     XNextEvent(display, &event);

@@ -67,7 +67,7 @@ public:
   std::string getLayout() override;
 
   void setLayout(const std::string& layout) override;
-  void setTranslateDeadKeys(bool state);
+  void setTextInput(bool state, const gfx::Point& screenCaretPos = {});
   void setInterpretOneFingerGestureAsMouseMovement(bool state) override;
   void onTabletOptionsChange();
 
@@ -154,7 +154,7 @@ private:
   // the DWM is enabled). So this flag is true in case we have to
   // adjust the real position we want to put the window.
   bool m_adjustShadow;
-  bool m_translateDeadKeys;
+  bool m_textInput;
   bool m_hasMouse;
   bool m_captureMouse;
 

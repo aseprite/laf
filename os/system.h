@@ -199,7 +199,7 @@ public:
   //
   // TODO Improve this API using different input modes,
   //      e.g. GameLike, TextInput, TextInputWithDeadKeys
-  virtual void setTranslateDeadKeys(bool state) = 0;
+  virtual void setTextInput(bool state, const gfx::Point& screenCaretPos = {}) = 0;
 
   // Returns the mouse position in the screen. Try to avoid using
   // this and prefer the Event mouse position.
