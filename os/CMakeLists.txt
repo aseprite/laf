@@ -25,6 +25,12 @@ if(WIN32)
     win/window.cpp
     win/window_dde.cpp
     win/wintab.cpp)
+
+  # Support IME to input CJK characters
+  IF (LAF_WITH_IME)
+    list(APPEND LAF_OS_SOURCES
+      win/ime_manager.cpp)
+  endif()
 elseif(APPLE)
   find_library(COCOA_LIBRARY Cocoa)
   find_library(CARBON_LIBRARY Carbon)
@@ -95,6 +101,12 @@ if(WIN32)
     kernel32 user32 gdi32 comdlg32 ole32 winmm
     shlwapi psapi wininet comctl32 dbghelp dwmapi
     msimg32)
+
+  # Support IME to input CJK characters
+  IF (LAF_WITH_IME)
+    target_compile_definitions(laf-os PUBLIC
+      LAF_WITH_IME)
+  endif()
 
   # Don't define min/max() macros when including <windows.h>
   target_compile_options(laf-os PRIVATE -DNOMINMAX)

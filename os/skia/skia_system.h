@@ -102,10 +102,10 @@ public:
 
   SurfaceRef loadRgbaSurface(const char* filename) override { return loadSurface(filename); }
 
-  void setTranslateDeadKeys(bool state) override
+  void setTextInput(bool state, const gfx::Point& screenCaretPos = {}) override
   {
     if (m_defaultWindow)
-      m_defaultWindow->setTranslateDeadKeys(state);
+      m_defaultWindow->setTextInput(state, screenCaretPos);
   }
 
   void listColorSpaces(std::vector<os::ColorSpaceRef>& list) override
