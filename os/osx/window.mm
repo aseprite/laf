@@ -351,7 +351,7 @@ void WindowOSX::activate()
   if ([m_nsWindow.delegate respondsToSelector:@selector(windowShouldBecomeKey:)] &&
       ![(id)m_nsWindow.delegate windowShouldBecomeKey:m_nsWindow])
     return;
-  [m_nsWindow makeKeyWindow];
+  [m_nsWindow makeKeyAndOrderFront:nil];
 }
 
 void WindowOSX::maximize()
