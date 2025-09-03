@@ -97,6 +97,10 @@ TextBlobRef SpriteTextBlob::MakeWithShaper(const FontMgrRef& fontMgr,
       if (chr == 0)
         break;
 
+      // Do not process newlines/control characters
+      if (chr >= 10 && chr <= 20)
+        continue;
+
       const glyph_t glyph = spriteFont->codePointToGlyph(chr);
       // Code point not found, use the fallback font or the FontMgr and
       // create a run using another TextBlob.
@@ -156,6 +160,9 @@ TextBlobRef SpriteTextBlob::MakeWithShaper(const FontMgrRef& fontMgr,
     run.utf8Range.end = i;
     if (chr == 0)
       break;
+
+    if (chr >= 10 && chr <= 20)
+      continue;
 
     const glyph_t glyph = spriteFont->codePointToGlyph(chr);
     // Code point not found, use the fallback font or the FontMgr and
