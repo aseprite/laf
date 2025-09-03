@@ -97,6 +97,10 @@ TextBlobRef SpriteTextBlob::MakeWithShaper(const FontMgrRef& fontMgr,
       if (chr == 0)
         break;
 
+      // Do not process newlines/control characters
+      if (chr >= 10 && chr <= 20)
+        continue;
+
       const glyph_t glyph = spriteFont->codePointToGlyph(chr);
       // Code point not found, use the fallback font or the FontMgr and
       // create a run using another TextBlob.
@@ -120,10 +124,15 @@ TextBlobRef SpriteTextBlob::MakeWithShaper(const FontMgrRef& fontMgr,
 
         // Calculate the max baseline/textHeight
         FontRef fallbackFont = getFallbackFont(fontMgr, font);
-        FontMetrics fallbackMetrics;
-        fallbackFont->metrics(&fallbackMetrics);
-        baseline = std::max(baseline, -fallbackMetrics.ascent);
-        textHeight = std::max(textHeight, fallbackMetrics.descent - fallbackMetrics.ascent);
+
+        // Change the baseline and height values only if the fallback font actually has a glyph for
+        // this codepoint.
+        if (fallbackFont->codePointToGlyph(chr) != 0) {
+          FontMetrics fallbackMetrics;
+          fallbackFont->metrics(&fallbackMetrics);
+          baseline = std::max(baseline, -fallbackMetrics.ascent);
+          textHeight = std::max(textHeight, fallbackMetrics.descent - fallbackMetrics.ascent);
+        }
       }
     }
   }
@@ -156,6 +165,9 @@ TextBlobRef SpriteTextBlob::MakeWithShaper(const FontMgrRef& fontMgr,
     run.utf8Range.end = i;
     if (chr == 0)
       break;
+
+    if (chr >= 10 && chr <= 20)
+      continue;
 
     const glyph_t glyph = spriteFont->codePointToGlyph(chr);
     // Code point not found, use the fallback font or the FontMgr and
