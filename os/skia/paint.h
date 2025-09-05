@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2022-2024  Igara Studio S.A.
+// Copyright (c) 2022-2025  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -12,6 +12,10 @@
 
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkPaint.h"
+
+#ifdef LAF_SKIA
+  #include "os/skia/skia_color_space.h"
+#endif
 
 namespace os {
 
@@ -34,6 +38,16 @@ public:
   {
     m_skPaint.setColor(SkColorSetARGB(gfx::geta(c), gfx::getr(c), gfx::getg(c), gfx::getb(c)));
   }
+
+#ifdef LAF_SKIA
+  void color(const gfx::Color c, const os::ColorSpace* cs)
+  {
+    auto skiaCS = static_cast<const os::SkiaColorSpace*>(cs);
+    m_skPaint.setColor4f(
+      SkColor4f::FromColor(SkColorSetARGB(gfx::geta(c), gfx::getr(c), gfx::getg(c), gfx::getb(c))),
+      skiaCS->skColorSpace().get());
+  }
+#endif
 
   float strokeWidth() const { return m_skPaint.getStrokeWidth(); }
   void strokeWidth(const float strokeWidth) { return m_skPaint.setStrokeWidth(strokeWidth); }

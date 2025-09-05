@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2022  Igara Studio S.A.
+// Copyright (C) 2018-2025  Igara Studio S.A.
 // Copyright (C) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -224,7 +224,9 @@ void SkiaWindowOSX::paintGC(const gfx::RectF& rect)
     // CGContextDrawImage(). This avoid a slow path where the
     // internal macOS argb32_image_mark_RGB32() function is called
     // (which is a performance hit).
-    if (!bitmap.tryAllocN32Pixels(rect.w, rect.h, !transparent))
+    SkImageInfo info = origBitmap.info().makeWH(rect.w, rect.h);
+    if (!bitmap.tryAllocPixels(
+          info.makeAlphaType(transparent ? kUnpremul_SkAlphaType : kOpaque_SkAlphaType)))
       return;
 
     if (transparent)

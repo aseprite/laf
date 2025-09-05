@@ -430,7 +430,7 @@ gfx::Color SkiaSurface::getPixel(int x, int y) const
 void SkiaSurface::putPixel(gfx::Color color, int x, int y)
 {
   if (m_surface) {
-    m_paint.setColor(to_skia(color));
+    m_paint.setColor4f(to_skia4f(color), skColorSpace().get());
     m_canvas->drawPoint(SkIntToScalar(x), SkIntToScalar(y), m_paint);
   }
   else {
@@ -642,7 +642,7 @@ void SkiaSurface::drawColoredRgbaSurface(const Surface* src,
 
   if (gfx::geta(bg) > 0) {
     SkPaint paint;
-    paint.setColor(to_skia(bg));
+    paint.setColor4f(to_skia4f(bg), skColorSpace().get());
     paint.setStyle(SkPaint::kFill_Style);
     m_canvas->drawRect(dstRect, paint);
   }
