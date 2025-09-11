@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2019-2022  Igara Studio S.A.
+// Copyright (c) 2019-2025  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -12,6 +12,8 @@
 
 namespace os {
 
+class ColorSpace;
+
 // Dummy Paint implementation for non-GUI apps/laf (when LAF_SKIA is
 // false)
 class Paint : public PaintBase {
@@ -23,7 +25,7 @@ public:
   void style(const Style style) { m_style = style; }
 
   gfx::Color color() const { return m_color; }
-  void color(const gfx::Color color) { m_color = color; }
+  void color(const gfx::Color color, const os::ColorSpace* cs = nullptr) { m_color = color; }
 
   float strokeWidth() const { return m_strokeWidth; }
   void strokeWidth(const float strokeWidth) { m_strokeWidth = strokeWidth; }

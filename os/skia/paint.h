@@ -9,13 +9,10 @@
 #pragma once
 
 #include "gfx/color.h"
+#include "os/skia/skia_color_space.h"
 
 #include "include/core/SkBlendMode.h"
 #include "include/core/SkPaint.h"
-
-#ifdef LAF_SKIA
-  #include "os/skia/skia_color_space.h"
-#endif
 
 namespace os {
 
@@ -34,20 +31,20 @@ public:
     const SkColor c = m_skPaint.getColor();
     return gfx::rgba(SkColorGetR(c), SkColorGetG(c), SkColorGetB(c), SkColorGetA(c));
   }
-  void color(const gfx::Color c)
-  {
-    m_skPaint.setColor(SkColorSetARGB(gfx::geta(c), gfx::getr(c), gfx::getg(c), gfx::getb(c)));
-  }
 
-#ifdef LAF_SKIA
-  void color(const gfx::Color c, const os::ColorSpace* cs)
+  void color(const gfx::Color c, const os::ColorSpace* cs = nullptr)
   {
-    auto skiaCS = static_cast<const os::SkiaColorSpace*>(cs);
-    m_skPaint.setColor4f(
-      SkColor4f::FromColor(SkColorSetARGB(gfx::geta(c), gfx::getr(c), gfx::getg(c), gfx::getb(c))),
-      skiaCS->skColorSpace().get());
+    if (cs) {
+      const auto* skiaCS = static_cast<const os::SkiaColorSpace*>(cs);
+      m_skPaint.setColor4f(
+        SkColor4f::FromColor(
+          SkColorSetARGB(gfx::geta(c), gfx::getr(c), gfx::getg(c), gfx::getb(c))),
+        skiaCS->skColorSpace().get());
+    }
+    else {
+      m_skPaint.setColor(SkColorSetARGB(gfx::geta(c), gfx::getr(c), gfx::getg(c), gfx::getb(c)));
+    }
   }
-#endif
 
   float strokeWidth() const { return m_skPaint.getStrokeWidth(); }
   void strokeWidth(const float strokeWidth) { return m_skPaint.setStrokeWidth(strokeWidth); }
