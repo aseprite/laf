@@ -39,6 +39,7 @@ public:
   os::ScreenRef screen() const override;
   os::ColorSpaceRef colorSpace() const override;
   int scale() const override { return m_scale; }
+  int baseScale() const override { return m_baseScale; }
   void setScale(int scale) override;
   bool isVisible() const override;
   void setVisible(bool visible) override;
@@ -148,6 +149,7 @@ private:
   std::unique_ptr<DragTargetAdapter> m_dragTargetAdapter = nullptr;
 
   int m_scale;
+  int m_baseScale;
   bool m_isCreated;
   // Since Windows Vista, it looks like Microsoft decided to change
   // the meaning of the window position to the shadow position (when
