@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2020-2021  Igara Studio S.A.
+// Copyright (c) 2020-2025  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -23,14 +23,15 @@ public:
   {
     auto rc = screen.frame;
     auto wa = screen.visibleFrame;
+    const int mainScreenHeight = [NSScreen mainScreen].frame.size.height;
 
     m_bounds.x = rc.origin.x;
-    m_bounds.y = rc.origin.y;
+    m_bounds.y = mainScreenHeight - rc.origin.y - rc.size.height;
     m_bounds.w = rc.size.width;
     m_bounds.h = rc.size.height;
 
     m_workarea.x = wa.origin.x;
-    m_workarea.y = m_bounds.h - wa.origin.y - wa.size.height;
+    m_workarea.y = mainScreenHeight - wa.origin.y - wa.size.height;
     m_workarea.w = wa.size.width;
     m_workarea.h = wa.size.height;
   }
