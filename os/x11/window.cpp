@@ -1199,14 +1199,19 @@ void WindowX11::processX11Event(XEvent& event)
         ev.setButton(button);
 
         if (event.type == ButtonPress) {
+          gfx::Point currentPos(event.xbutton.x / m_scale, event.xbutton.y / m_scale);
+
           if (m_doubleClickButton == button &&
-              base::current_tick() - m_doubleClickTick < LAF_X11_DOUBLE_CLICK_TIMEOUT) {
+              base::current_tick() - m_doubleClickTick < LAF_X11_DOUBLE_CLICK_TIMEOUT &&
+              std::abs(currentPos.x - m_doubleClickStartPos.x) < kDoubleClickThreshold &&
+              std::abs(currentPos.y - m_doubleClickStartPos.y) < kDoubleClickThreshold) {
             ev.setType(Event::MouseDoubleClick);
             m_doubleClickButton = Event::NoneButton;
           }
           else {
             m_doubleClickButton = button;
             m_doubleClickTick = base::current_tick();
+            m_doubleClickStartPos = currentPos;
           }
         }
       }
@@ -1222,8 +1227,14 @@ void WindowX11::processX11Event(XEvent& event)
       if (event.xmotion.time == g_lastXInputEventTime)
         break;
 
-      // Reset double-click state
-      m_doubleClickButton = Event::NoneButton;
+      // Only reset double-click state if movement exceeds threshold
+      if (m_doubleClickButton != Event::NoneButton) {
+        int deltaX = std::abs(event.xmotion.x / m_scale - m_doubleClickStartPos.x);
+        int deltaY = std::abs(event.xmotion.y / m_scale - m_doubleClickStartPos.y);
+        if (deltaX >= kDoubleClickThreshold || deltaY >= kDoubleClickThreshold) {
+          m_doubleClickButton = Event::NoneButton;
+        }
+      }
 
       const gfx::Point pos(event.xmotion.x / m_scale, event.xmotion.y / m_scale);
 

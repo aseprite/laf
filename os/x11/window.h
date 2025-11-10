@@ -13,6 +13,7 @@
 #include "gfx/border.h"
 #include "gfx/color_space.h" // Include here avoid error with None
 #include "gfx/fwd.h"
+#include "gfx/point.h"
 #include "gfx/size.h"
 #include "os/color_space.h"
 #include "os/event.h"
@@ -125,6 +126,8 @@ private:
   // Double-click info
   Event::MouseButton m_doubleClickButton;
   base::tick_t m_doubleClickTick;
+  gfx::Point m_doubleClickStartPos;
+  static const int kDoubleClickThreshold = 8;
 
   static bool g_textInput;
 };
