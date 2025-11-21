@@ -160,6 +160,7 @@ WindowWin::Touch::Touch() : fingers(0), canBeMouse(false), asMouse(false), timer
 WindowWin::WindowWin(const WindowSpec& spec)
   : m_clientSize(1, 1)
   , m_scale(spec.scale())
+  , m_baseScale(spec.scale())
   , m_isCreated(false)
   , m_adjustShadow(true)
   , m_textInput(false)
@@ -266,6 +267,11 @@ WindowWin::WindowWin(const WindowSpec& spec)
 
   SetWindowLongPtr(m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
 
+  if (winApi.GetWindowDpiAwarenessContext) {
+    double scaleFactor = winApi.GetDpiForWindow(m_hwnd) / (double) USER_DEFAULT_SCREEN_DPI;
+    m_scale = std::ceil(m_baseScale * scaleFactor);
+  }
+
   // This flag is used to avoid calling T::resizeImpl() when we
   // add the scrollbars to the window. (As the T type could not be
   // fully initialized yet.)
@@ -370,7 +376,10 @@ os::ColorSpaceRef WindowWin::colorSpace() const
 
 void WindowWin::setScale(int scale)
 {
-  m_scale = scale;
+  double scaleFactor = m_scale / (double) m_baseScale;
+  m_baseScale = scale;
+  // round to nearest integer, rounding 0.5 up
+  m_scale = std::ceil(m_baseScale * scaleFactor);
 
   // Align window size to new scale
   {
@@ -996,6 +1005,21 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
         m_fixingPos = false;
       }
       break;
+
+    case WM_DPICHANGED: {
+      double scaleFactor = HIWORD(wparam) / (double) USER_DEFAULT_SCREEN_DPI;
+      m_scale = std::ceil(m_baseScale * scaleFactor);
+
+      RECT* prcNewWindow = (RECT*)lparam;
+      SetWindowPos(m_hwnd,
+                  nullptr,
+                  prcNewWindow ->left,
+                  prcNewWindow ->top,
+                  prcNewWindow->right - prcNewWindow->left,
+                  prcNewWindow->bottom - prcNewWindow->top,
+                  SWP_NOZORDER | SWP_NOACTIVATE);
+      break;
+    }
 
     case WM_SETCURSOR:
       // We set our custom cursor if we are in the client area, or in
@@ -1856,8 +1880,16 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
           // scrollbars. In this way they are not visible, but we still
           // get their messages.
           NCCALCSIZE_PARAMS* cs = reinterpret_cast<NCCALCSIZE_PARAMS*>(lparam);
-          cs->rgrc[0].right += GetSystemMetrics(SM_CYVSCROLL);
-          cs->rgrc[0].bottom += GetSystemMetrics(SM_CYHSCROLL);
+
+          auto& winApi = system()->winApi();
+          if (winApi.GetWindowDpiAwarenessContext) {
+            UINT dpi = winApi.GetDpiForWindow(m_hwnd);
+            cs->rgrc[0].right += winApi.GetSystemMetricsForDpi(SM_CYVSCROLL, dpi);
+            cs->rgrc[0].bottom += winApi.GetSystemMetricsForDpi(SM_CYHSCROLL, dpi);
+          } else {
+            cs->rgrc[0].right += GetSystemMetrics(SM_CYVSCROLL);
+            cs->rgrc[0].bottom += GetSystemMetrics(SM_CYHSCROLL);
+          }
         }
       }
       break;
@@ -2563,10 +2595,21 @@ HWND WindowWin::createHwnd(WindowWin* self, const WindowSpec& spec)
     rc.w = spec.contentRect().w;
     rc.h = spec.contentRect().h;
     RECT ncrc = { 0, 0, rc.w, rc.h };
-    AdjustWindowRectEx(&ncrc,
-                       style,
-                       false, // Add a field to WindowSpec to add native menu bars
-                       exStyle);
+
+    auto& winApi = system()->winApi();
+    if (winApi.GetWindowDpiAwarenessContext) {
+      UINT dpi = winApi.GetDpiForWindow(self->m_hwnd);
+      winApi.AdjustWindowRectExForDpi(&ncrc,
+                              style,
+                              false, // Add a field to WindowSpec to add native menu bars
+                              exStyle,
+                              dpi);
+    } else {
+      AdjustWindowRectEx(&ncrc,
+                        style,
+                        false, // Add a field to WindowSpec to add native menu bars
+                        exStyle);
+    }
 
     if (rc.x != CW_USEDEFAULT)
       rc.x += ncrc.left;
@@ -2614,6 +2657,14 @@ LRESULT CALLBACK WindowWin::staticWndProc(HWND hwnd, UINT msg, WPARAM wparam, LP
 
     if (wnd && wnd->m_hwnd == nullptr)
       wnd->m_hwnd = hwnd;
+      
+    // Enable scaling for titlebar with legacy per-monitor dpi awareness steeting
+    auto& winApi = system()->winApi();
+    if (winApi.GetWindowDpiAwarenessContext) {
+      DPI_AWARENESS_CONTEXT dpiContext = winApi.GetWindowDpiAwarenessContext(hwnd);
+      if (!winApi.AreDpiAwarenessContextsEqual(dpiContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+        winApi.EnableNonClientDpiScaling(hwnd);
+    }
   }
   else {
     wnd = reinterpret_cast<WindowWin*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
