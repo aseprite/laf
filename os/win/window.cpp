@@ -66,6 +66,68 @@
   #define INTERACTION_CONTEXT_PROPERTY_INTERACTION_UI_FEEDBACK_OFF 0
 #endif
 
+#if LAF_WINRT
+  #include <DispatcherQueue.h>
+  #include <Windows.Graphics.Display.Interop.h>
+  #include <winrt/Windows.Foundation.h>
+  #include <winrt/Windows.Graphics.Display.h>
+
+namespace {
+using namespace winrt::Windows::Graphics::Display;
+
+winrt::com_ptr<ABI::Windows::System::IDispatcherQueueController> g_dispatcher_queue_controller;
+bool g_winrt_error = false;
+
+// Creates a WinRT DispatcherQueueController which is neccesary to recieve the ColorProfileChanged
+// event, and then registers the event to the given HWND. Calling this twice will just register it
+// twice, if we need to unregister it for some reason, we'll have to store the winrt::event_token
+// and use that, or we can delete the dispatcher queue controller.
+static bool color_profile_changed(HWND hwnd, std::function<void()> callback)
+{
+  try {
+    if (!g_dispatcher_queue_controller) {
+      DispatcherQueueOptions options{ sizeof(DispatcherQueueOptions),
+                                      DQTYPE_THREAD_CURRENT,
+                                      DQTAT_COM_STA };
+
+      winrt::check_hresult(
+        CreateDispatcherQueueController(options, g_dispatcher_queue_controller.put()));
+    }
+
+    auto factory =
+      winrt::get_activation_factory<DisplayInformation, IDisplayInformationStaticsInterop>();
+
+    DisplayInformation displayInfo{ nullptr };
+    winrt::check_hresult(factory->GetForWindow(hwnd,
+                                               winrt::guid_of<DisplayInformation>(),
+                                               winrt::put_abi(displayInfo)));
+
+    displayInfo.ColorProfileChanged([callback](const auto&, const auto&) { callback(); });
+
+    return true;
+  }
+  catch (...) {
+    LOG(ERROR, "OS: Could not hook to color profile event\n");
+
+    // Any error here is more than likely because we're in an unsupported environment (Windows 10)
+    // so we just set a global flag to avoid re-attempting this.
+    g_winrt_error = true;
+
+    // Get rid of the controller if we managed to create it but the other calls failed
+    if (g_dispatcher_queue_controller) {
+      ABI::Windows::Foundation::IAsyncAction* action;
+      if (g_dispatcher_queue_controller->ShutdownQueueAsync(&action) == S_OK) {
+        action->GetResults();
+        action->Release();
+      }
+    }
+
+    return false;
+  }
+}
+} // namespace
+#endif
+
 namespace os {
 
 // Converts an os::Hit to a Win32 hit test value
@@ -183,6 +245,7 @@ WindowWin::WindowWin(const WindowSpec& spec)
   , m_titled(spec.titled())
   , m_borderless(spec.borderless())
   , m_fixingPos(false)
+  , m_isReceivingColorSpaceEvents(false)
 {
   auto& winApi = system()->winApi();
   if (
@@ -345,24 +408,38 @@ os::ScreenRef WindowWin::screen() const
   return os::System::instance()->primaryScreen();
 }
 
+std::string WindowWin::readIcc() const
+{
+  std::string iccFilename;
+  if (m_hwnd) {
+    HMONITOR monitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);
+    iccFilename = get_hmonitor_icc_filename(monitor);
+  }
+
+  return iccFilename;
+}
+
+os::ColorSpaceRef WindowWin::readColorSpace() const
+{
+  std::string icc = readIcc();
+  if (!icc.empty())
+    return get_colorspace_from_icc_file(icc);
+
+  // sRGB by default
+  if (auto system = os::System::instance())
+    return system->makeColorSpace(gfx::ColorSpace::MakeSRGB());
+
+  return nullptr;
+}
+
 os::ColorSpaceRef WindowWin::colorSpace() const
 {
   if (auto cs = Window::colorSpace())
     return cs;
 
-  if (m_hwnd) {
-    HMONITOR monitor = MonitorFromWindow(m_hwnd, MONITOR_DEFAULTTONEAREST);
-    std::string iccFilename = get_hmonitor_icc_filename(monitor);
-    if (m_lastICCProfile != iccFilename) {
-      m_lastICCProfile = iccFilename;
-      if (!iccFilename.empty())
-        m_lastColorProfile = get_colorspace_from_icc_file(iccFilename);
-    }
-  }
-  // sRGB by default
   if (!m_lastColorProfile) {
-    if (auto system = os::System::instance())
-      m_lastColorProfile = system->makeColorSpace(gfx::ColorSpace::MakeSRGB());
+    m_lastICCProfile = readIcc();
+    m_lastColorProfile = readColorSpace();
   }
 
   return m_lastColorProfile;
@@ -370,6 +447,9 @@ os::ColorSpaceRef WindowWin::colorSpace() const
 
 void WindowWin::setScale(int scale)
 {
+  if (m_scale == scale)
+    return;
+
   m_scale = scale;
 
   // Align window size to new scale
@@ -1177,7 +1257,20 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
       break;
 
     case WM_SETTINGCHANGE:
-      checkDarkModeChange();
+      if (wparam == SPI_SETWORKAREA)
+        checkColorSpaceChange();
+
+      if (!wparam && lparam &&
+          CompareStringOrdinal(reinterpret_cast<LPCWSTR>(lparam),
+                               -1,
+                               L"ImmersiveColorSet",
+                               -1,
+                               TRUE) == CSTR_EQUAL)
+        checkDarkModeChange();
+      break;
+
+    case WM_DISPLAYCHANGE:
+      checkColorSpaceChange();
       break;
 
       // Mouse and Trackpad Messages
@@ -2397,13 +2490,35 @@ void WindowWin::killTouchTimer()
   }
 }
 
+void WindowWin::switchColorSpace()
+{
+  ASSERT(m_lastColorProfile);
+
+  auto newIcc = readIcc();
+  if (m_lastICCProfile == newIcc)
+    return;
+
+  auto newColorProfile = readColorSpace();
+
+  // Notify only when they're meaningfully different
+  if (!newColorProfile->gfxColorSpace()->nearlyEqual(*m_lastColorProfile->gfxColorSpace()))
+    onChangeColorSpace();
+
+  m_lastICCProfile = newIcc;
+  m_lastColorProfile = newColorProfile;
+}
+
 void WindowWin::checkColorSpaceChange()
 {
-  // TODO Compare if CS are different.
-  // os::ColorSpaceRef oldCS = m_lastColorProfile;
-  // os::ColorSpaceRef newCS = colorSpace();
+#if LAF_WINRT
+  if (m_isReceivingColorSpaceEvents)
+    return;
 
-  onChangeColorSpace();
+  if (!g_winrt_error)
+    m_isReceivingColorSpaceEvents = color_profile_changed(m_hwnd, [&] { switchColorSpace(); });
+#endif
+
+  switchColorSpace();
 }
 
 // We only support the Windows 11 dark mode, detecting it and using

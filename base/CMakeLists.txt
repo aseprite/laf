@@ -111,6 +111,11 @@ if(WIN32)
   endif()
 
   target_link_libraries(laf-base dbghelp shlwapi version)
+
+  if (LAF_WITH_WINRT)
+    target_compile_definitions(laf-base PUBLIC LAF_WINRT)
+    target_link_libraries(laf-base WindowsApp)
+  endif()
 else()
   if(APPLE)
     target_compile_options(laf-base PRIVATE -fobjc-arc)
