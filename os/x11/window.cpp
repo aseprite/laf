@@ -1035,12 +1035,37 @@ void WindowX11::getX11FrameExtents()
   }
 }
 
+bool WindowX11::isDoubleClickEvent(const Event& event) const
+{
+  const gfx::Point currentPos = event.position();
+  return (m_doubleClickButton == event.button() &&
+          base::current_tick() - m_doubleClickTick < LAF_X11_DOUBLE_CLICK_TIMEOUT &&
+          std::abs(currentPos.x - m_doubleClickStartPos.x) < kDoubleClickThreshold &&
+          std::abs(currentPos.y - m_doubleClickStartPos.y) < kDoubleClickThreshold);
+}
+
+void WindowX11::handleXInputDoubleClickEvent(int button, Event& ev)
+{
+  if (ev.type() == Event::MouseDown && !is_mouse_wheel_button(button)) {
+    if (isDoubleClickEvent(ev)) {
+      ev.setType(Event::MouseDoubleClick);
+      m_doubleClickButton = Event::NoneButton;
+    }
+    else {
+      m_doubleClickButton = ev.button();
+      m_doubleClickTick = base::current_tick();
+      m_doubleClickStartPos = ev.position();
+    }
+  }
+}
+
 void WindowX11::processX11Event(XEvent& event)
 {
   auto* xinput = X11::instance()->xinput();
   if (xinput->handleExtensionEvent(event)) {
     Event ev;
     xinput->convertExtensionEvent(event, ev, m_scale, g_lastXInputEventTime);
+    handleXInputDoubleClickEvent(event.xbutton.button, ev);
     queueEvent(ev);
     return;
   }
@@ -1184,6 +1209,9 @@ void WindowX11::processX11Event(XEvent& event)
         break;
 
       Event ev;
+      ev.setModifiers(get_modifiers_from_x(event.xbutton.state));
+      ev.setPosition(gfx::Point(event.xbutton.x / m_scale, event.xbutton.y / m_scale));
+
       if (is_mouse_wheel_button(event.xbutton.button)) {
         if (event.type == ButtonPress) {
           ev.setType(Event::MouseWheel);
@@ -1204,10 +1232,7 @@ void WindowX11::processX11Event(XEvent& event)
         if (event.type == ButtonPress) {
           gfx::Point currentPos(event.xbutton.x / m_scale, event.xbutton.y / m_scale);
 
-          if (m_doubleClickButton == button &&
-              base::current_tick() - m_doubleClickTick < LAF_X11_DOUBLE_CLICK_TIMEOUT &&
-              std::abs(currentPos.x - m_doubleClickStartPos.x) < kDoubleClickThreshold &&
-              std::abs(currentPos.y - m_doubleClickStartPos.y) < kDoubleClickThreshold) {
+          if (isDoubleClickEvent(ev)) {
             ev.setType(Event::MouseDoubleClick);
             m_doubleClickButton = Event::NoneButton;
           }
@@ -1218,8 +1243,6 @@ void WindowX11::processX11Event(XEvent& event)
           }
         }
       }
-      ev.setModifiers(get_modifiers_from_x(event.xbutton.state));
-      ev.setPosition(gfx::Point(event.xbutton.x / m_scale, event.xbutton.y / m_scale));
 
       queueEvent(ev);
       break;

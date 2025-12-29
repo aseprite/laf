@@ -103,6 +103,10 @@ private:
   bool setX11Cursor(::Cursor xcursor);
   bool requestX11FrameExtents();
   void getX11FrameExtents();
+
+  bool isDoubleClickEvent(const Event& event) const;
+  void handleXInputDoubleClickEvent(int button, Event& ev);
+
   static void addWindow(WindowX11* window);
   static void removeWindow(WindowX11* window);
 
