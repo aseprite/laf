@@ -1,5 +1,5 @@
 // LAF Text Library
-// Copyright (c) 2022-2025  Igara Studio S.A.
+// Copyright (c) 2022-2024  Igara Studio S.A.
 // Copyright (C) 2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -31,20 +31,6 @@ enum class TextAlign { Left, Center, Right };
 class DrawTextDelegate {
 public:
   virtual ~DrawTextDelegate() {}
-
-  // This is called before processing and drawing character by character.
-  // Returns true if the character index is in the range of selected characters.
-  virtual bool isSelectedChar(const int index)
-  {
-    // Do nothing
-    return false;
-  }
-
-  // This is called before processing and drawing character by character.
-  virtual void drawSelectionBg(const gfx::RectF& bounds)
-  {
-    // Do nothing
-  }
 
   // This is called before drawing the character.
   virtual void preProcessChar(const int index,

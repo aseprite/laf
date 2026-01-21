@@ -1,5 +1,5 @@
 // LAF Text Library
-// Copyright (c) 2024-2025  Igara Studio S.A.
+// Copyright (c) 2024  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -49,30 +49,10 @@ public:
   void commitRunBuffer(TextBlob::RunInfo& info) override
   {
     if (info.clusters && info.glyphCount > 0) {
-      gfx::RectF selectionBounds;
-      gfx::RectF textBounds;
-      std::vector<gfx::RectF> glyphsBounds(info.glyphCount);
-      for (int i = 0; i < info.glyphCount; ++i) {
-        auto bounds = info.getGlyphBounds(i);
-        glyphsBounds[i] = bounds;
-        textBounds |= bounds;
-
-        if (m_delegate && m_delegate->isSelectedChar(i))
-          selectionBounds |= bounds;
-      }
+      float advanceX = 0.0f;
 
       os::Paint paint;
       paint.style(os::Paint::Fill);
-
-      if (m_surface && m_bg != gfx::ColorNone) {
-        paint.color(m_bg);
-        m_surface->drawRect(textBounds.offset(m_origin), paint);
-      }
-
-      if (m_delegate && !selectionBounds.isEmpty())
-        m_delegate->drawSelectionBg(selectionBounds.offset(m_origin));
-
-      float advanceX = 0.0f;
 
       for (int i = 0; i < info.glyphCount; ++i) {
         int utf8Begin, utf8End;
@@ -91,7 +71,7 @@ public:
 
         const std::string utf8text = m_text.substr(utf8Begin, utf8End - utf8Begin);
 
-        gfx::RectF bounds = glyphsBounds[i];
+        gfx::RectF bounds = info.getGlyphBounds(i);
         bounds.offset(m_origin);
 
         advanceX += bounds.w;
@@ -119,6 +99,11 @@ public:
 
         if (m_delegate)
           m_delegate->preDrawChar(bounds);
+
+        if (m_bg != gfx::ColorNone) {
+          paint.color(m_bg);
+          m_surface->drawRect(bounds, paint);
+        }
 
         if (m_surface && info.font) {
           if (info.font->type() == FontType::SpriteSheet) {
