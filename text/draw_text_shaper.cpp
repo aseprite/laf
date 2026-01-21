@@ -100,11 +100,6 @@ public:
         if (m_delegate)
           m_delegate->preDrawChar(bounds);
 
-        if (m_bg != gfx::ColorNone) {
-          paint.color(m_bg);
-          m_surface->drawRect(bounds, paint);
-        }
-
         if (m_surface && info.font) {
           if (info.font->type() == FontType::SpriteSheet) {
             const auto* spriteFont = static_cast<const SpriteSheetFont*>(info.font.get());
