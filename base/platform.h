@@ -25,6 +25,7 @@ struct Platform {
     Windows,
     macOS,
     Linux,
+    iOS,
   };
 
   enum class Arch {
@@ -37,6 +38,8 @@ struct Platform {
   static constexpr OS os =
 #if LAF_WINDOWS
     OS::Windows
+#elif LAF_IOS
+    OS::iOS
 #elif LAF_MACOS
     OS::macOS
 #else
@@ -69,6 +72,8 @@ struct Platform {
   Version servicePack;           // Service pack version
   bool isWow64 = false;          // 32-bit version running on 64-bit
   const char* wineVer = nullptr; // Are we running on Wine emulator?
+#elif LAF_IOS
+    // Nothing extra (iOS version on "osVer" field)
 #elif LAF_MACOS
     // Nothing extra (macOS version on "osVer" field)
 #elif LAF_LINUX
@@ -83,6 +88,10 @@ Platform get_platform();
 
 bool is_wow64();
 const char* get_wine_version();
+
+#elif LAF_IOS
+
+Version get_ios_version();
 
 #elif LAF_MACOS
 

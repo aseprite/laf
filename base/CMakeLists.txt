@@ -70,6 +70,9 @@ elseif(APPLE)
     fs_osx.mm
     platform_osx.mm
     uuid_osx.mm)
+  if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(LAF_IOS TRUE CACHE BOOL "Building for iOS" FORCE)
+  endif()
 else()
   set(BASE_SOURCES ${BASE_SOURCES}
     platform_unix.cpp
@@ -116,7 +119,11 @@ else()
     target_compile_options(laf-base PRIVATE -fobjc-arc)
 
     find_library(FOUNDATION_LIBRARY Foundation)
-    target_compile_definitions(laf-base PUBLIC LAF_MACOS)
+    if(LAF_IOS)
+      target_compile_definitions(laf-base PUBLIC LAF_IOS LAF_MACOS)
+    else()
+      target_compile_definitions(laf-base PUBLIC LAF_MACOS)
+    endif()
     target_link_libraries(laf-base ${FOUNDATION_LIBRARY})
   else()
     target_compile_definitions(laf-base PUBLIC LAF_LINUX)

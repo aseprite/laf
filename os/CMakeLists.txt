@@ -32,22 +32,35 @@ if(WIN32)
       win/ime_manager.cpp)
   endif()
 elseif(APPLE)
-  find_library(COCOA_LIBRARY Cocoa)
-  find_library(CARBON_LIBRARY Carbon)
-  if(COCOA_LIBRARY)
+  if(LAF_IOS)
+    find_library(UIKIT_LIBRARY UIKit)
+    find_library(QUARTZCORE_LIBRARY QuartzCore)
     list(APPEND LAF_OS_SOURCES
-      osx/app.mm
-      osx/app_delegate.mm
-      osx/dnd.mm
-      osx/color_space.mm
-      osx/event_queue.mm
-      osx/keys.mm
-      osx/logger.mm
-      osx/menus.mm
-      osx/system.mm
-      osx/view.mm
-      osx/window.mm
-      gl/gl_context_nsgl.mm)
+      ios/app_delegate.mm
+      ios/dnd.mm
+      ios/event_queue.mm
+      ios/keys.mm
+      ios/system.mm
+      ios/view.mm
+      ios/window.mm)
+  else()
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(CARBON_LIBRARY Carbon)
+    if(COCOA_LIBRARY)
+      list(APPEND LAF_OS_SOURCES
+        osx/app.mm
+        osx/app_delegate.mm
+        osx/dnd.mm
+        osx/color_space.mm
+        osx/event_queue.mm
+        osx/keys.mm
+        osx/logger.mm
+        osx/menus.mm
+        osx/system.mm
+        osx/view.mm
+        osx/window.mm
+        gl/gl_context_nsgl.mm)
+    endif()
   endif()
 else()
   list(APPEND LAF_OS_SOURCES
@@ -79,8 +92,13 @@ if(LAF_BACKEND STREQUAL "skia")
     list(APPEND LAF_OS_SOURCES
       skia/skia_window_win.cpp)
   elseif(APPLE)
-    list(APPEND LAF_OS_SOURCES
-      skia/skia_window_osx.mm)
+    if(LAF_IOS)
+      list(APPEND LAF_OS_SOURCES
+        skia/skia_window_ios.mm)
+    else()
+      list(APPEND LAF_OS_SOURCES
+        skia/skia_window_osx.mm)
+    endif()
   else()
     list(APPEND LAF_OS_SOURCES
       skia/skia_window_x11.cpp)
@@ -118,7 +136,11 @@ if(WIN32)
   # To include wacom header files
   target_include_directories(laf-os PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../third_party)
 elseif(APPLE)
-  if(COCOA_LIBRARY)
+  if(LAF_IOS)
+    list(APPEND LAF_OS_PLATFORM_LIBS
+      ${UIKIT_LIBRARY}
+      ${QUARTZCORE_LIBRARY})
+  elseif(COCOA_LIBRARY)
     list(APPEND LAF_OS_PLATFORM_LIBS
       ${COCOA_LIBRARY}
       ${CARBON_LIBRARY})

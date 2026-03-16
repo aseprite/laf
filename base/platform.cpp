@@ -58,6 +58,13 @@ Platform get_platform()
   p.isWow64 = is_wow64();
   p.wineVer = get_wine_version();
 
+#elif LAF_IOS
+
+  // ----------------------------------------------------------------------
+  // iOS
+
+  p.osVer = get_ios_version();
+
 #elif LAF_MACOS
 
   // ----------------------------------------------------------------------

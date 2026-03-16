@@ -31,7 +31,15 @@ find_library(SKIA_LIBRARY skia PATH "${SKIA_LIBRARY_DIR}")
 if(WIN32)
   find_library(SKIA_OPENGL_LIBRARY opengl32)
 elseif(APPLE)
-  find_library(SKIA_OPENGL_LIBRARY OpenGL NAMES GL)
+  if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    # iOS uses Metal, no OpenGL
+    find_library(SKIA_METAL_LIBRARY Metal)
+    find_library(SKIA_METALKIT_LIBRARY MetalKit)
+    find_library(SKIA_COREGRAPHICS_LIBRARY CoreGraphics)
+    set(SKIA_OPENGL_LIBRARY "")
+  else()
+    find_library(SKIA_OPENGL_LIBRARY OpenGL NAMES GL)
+  endif()
 else()
   find_library(SKIA_OPENGL_LIBRARY opengl NAMES GL)
 endif()
@@ -200,8 +208,12 @@ target_compile_definitions(skia INTERFACE
   SK_SCALAR_TO_FLOAT_EXCLUDED
   SK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1
   SK_SUPPORT_GPU=1
-  SK_ENABLE_SKSL=1
-  SK_GL=1)
+  SK_ENABLE_SKSL=1)
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  target_compile_definitions(skia INTERFACE SK_METAL=1)
+else()
+  target_compile_definitions(skia INTERFACE SK_GL=1)
+endif()
 
 # Freetype is used by skia, and it needs zlib and libpng
 target_link_libraries(skia INTERFACE
@@ -213,17 +225,34 @@ if(WIN32)
     SK_BUILD_FOR_WIN
     _CRT_SECURE_NO_WARNINGS)
 elseif(APPLE)
-  target_compile_definitions(skia INTERFACE
-    SK_BUILD_FOR_MAC)
+  if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    target_compile_definitions(skia INTERFACE
+      SK_BUILD_FOR_IOS)
+  else()
+    target_compile_definitions(skia INTERFACE
+      SK_BUILD_FOR_MAC)
+  endif()
 else()
   target_compile_definitions(skia INTERFACE
     SK_BUILD_FOR_UNIX)
 endif()
 
 if(APPLE)
-  find_library(COCOA_LIBRARY Cocoa)
-  target_link_libraries(skia INTERFACE
-    ${COCOA_LIBRARY})
+  if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    find_library(UIKIT_LIBRARY UIKit)
+    find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+    find_library(CORETEXT_LIBRARY CoreText)
+    target_link_libraries(skia INTERFACE
+      ${UIKIT_LIBRARY}
+      ${COREFOUNDATION_LIBRARY}
+      ${CORETEXT_LIBRARY}
+      ${SKIA_METAL_LIBRARY}
+      ${SKIA_COREGRAPHICS_LIBRARY})
+  else()
+    find_library(COCOA_LIBRARY Cocoa)
+    target_link_libraries(skia INTERFACE
+      ${COCOA_LIBRARY})
+  endif()
 endif()
 
 if(UNIX AND NOT APPLE)

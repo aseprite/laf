@@ -64,7 +64,10 @@ public:
 #if LAF_WINDOWS
   [[nodiscard]] static SystemRef makeWin();
 #endif
-#if LAF_MACOS
+#if LAF_IOS
+  [[nodiscard]] static SystemRef makeIOS();
+#endif
+#if LAF_MACOS && !LAF_IOS
   [[nodiscard]] static SystemRef makeOSX();
 #endif
 #if LAF_LINUX

@@ -22,6 +22,9 @@
   #include "os/win/color_space.h"
   #include "os/win/system.h"
   #define SkiaSystemBase SystemWin
+#elif LAF_IOS
+  #include "os/ios/system.h"
+  #define SkiaSystemBase SystemIOS
 #elif LAF_MACOS
   #include "os/osx/color_space.h"
   #include "os/osx/system.h"
@@ -113,7 +116,7 @@ public:
     list.push_back(makeColorSpace(gfx::ColorSpace::MakeNone()));
     list.push_back(makeColorSpace(gfx::ColorSpace::MakeSRGB()));
 
-#if LAF_WINDOWS || LAF_MACOS
+#if LAF_WINDOWS || (LAF_MACOS && !LAF_IOS)
     list_display_colorspaces(list);
 #endif
   }

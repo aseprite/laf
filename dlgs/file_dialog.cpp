@@ -40,6 +40,8 @@ FileDialogRef FileDialog::make(const Spec& spec)
 {
 #if LAF_WINDOWS
   return FileDialog::makeWin(spec);
+#elif LAF_IOS
+  return FileDialog::makeIOS(spec);
 #elif LAF_MACOS
   return FileDialog::makeOSX(spec);
 #elif LAF_LINUX

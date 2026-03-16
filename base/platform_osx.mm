@@ -10,9 +10,24 @@
 
 #include "base/platform.h"
 
-#include <Cocoa/Cocoa.h>
+#if LAF_IOS
+  #import <UIKit/UIKit.h>
+#else
+  #include <Cocoa/Cocoa.h>
+#endif
 
 namespace base {
+
+#if LAF_IOS
+
+Version get_ios_version()
+{
+  NSProcessInfo* info = [NSProcessInfo processInfo];
+  NSOperatingSystemVersion osVer = [info operatingSystemVersion];
+  return Version(osVer.majorVersion, osVer.minorVersion, osVer.patchVersion, 0);
+}
+
+#else
 
 Version get_osx_version()
 {
@@ -47,5 +62,7 @@ Version get_osx_version()
 
   return Version(major, minor, patch, 0);
 }
+
+#endif
 
 } // namespace base

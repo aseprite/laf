@@ -14,6 +14,8 @@
 
 #if LAF_WINDOWS
   #include <windows.h>
+#elif LAF_IOS
+  namespace os { int ios_main(int argc, char* argv[]); }
 #elif LAF_MACOS
   #include "os/osx/app.h"
 #elif LAF_LINUX
@@ -59,7 +61,9 @@ int wmain(int argc, wchar_t* wargv[], wchar_t* envp[])
 
 int main(int argc, char* argv[])
 {
-#if LAF_MACOS
+#if LAF_IOS
+  return os::ios_main(argc, argv);
+#elif LAF_MACOS
   os::AppOSX app;
   if (!app.init())
     return 1;

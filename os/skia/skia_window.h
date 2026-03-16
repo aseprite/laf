@@ -14,6 +14,11 @@
 namespace os {
 using SkiaWindowPlatform = os::SkiaWindowWin;
 }
+#elif LAF_IOS
+  #include "os/skia/skia_window_ios.h"
+namespace os {
+using SkiaWindowPlatform = os::SkiaWindowIOS;
+}
 #elif LAF_MACOS
   #include "os/skia/skia_window_osx.h"
 namespace os {

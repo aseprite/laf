@@ -22,7 +22,7 @@
   #include <unistd.h>
 #endif
 
-#if LAF_MACOS
+#if LAF_MACOS && !LAF_IOS
   #include <libproc.h>
 #endif
 
@@ -83,13 +83,20 @@ bool is_process_running(pid pid)
   return (kill(pid, 0) == 0);
 }
 
-  #if LAF_MACOS
+  #if LAF_MACOS && !LAF_IOS
 
 std::string get_process_name(pid pid)
 {
   struct proc_bsdinfo process;
   proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &process, PROC_PIDTBSDINFO_SIZE);
   return process.pbi_name;
+}
+
+  #elif LAF_IOS
+
+std::string get_process_name(pid pid)
+{
+  return "aseprite";
 }
 
   #else

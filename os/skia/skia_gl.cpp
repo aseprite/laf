@@ -11,7 +11,7 @@
 #include "base/log.h"
 #include "os/skia/skia_gl.h"
 
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
 
   #include "include/core/SkSurface.h"
   #include "include/gpu/GrBackendSurface.h"

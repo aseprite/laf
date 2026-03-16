@@ -73,6 +73,8 @@ public:
   #ifdef LAF_DLGS_PROC_NAME
   static FileDialogRef makeWinSafe(const Spec& spec);
   #endif
+#elif LAF_IOS
+  static FileDialogRef makeIOS(const Spec& spec);
 #elif LAF_MACOS
   static FileDialogRef makeOSX(const Spec& spec);
 #elif LAF_LINUX

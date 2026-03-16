@@ -18,11 +18,13 @@
 
 #include "include/core/SkCanvas.h"
 
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
   #if LAF_WINDOWS
     #include <windows.h>
 
     #include <GL/gl.h>
+  #elif LAF_IOS
+    // iOS uses Metal, no OpenGL
   #elif LAF_MACOS
     #include <OpenGL/gl.h>
   #endif
@@ -46,7 +48,7 @@ public:
 
   ~SkiaWindowBase()
   {
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
     detachGpuContext();
 #endif
   }
@@ -86,7 +88,7 @@ public:
     m_backend = Backend::NONE;
     m_surface.reset();
 
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
     // Detach and re-create OpenGL context
     detachGpuContext();
 
@@ -151,7 +153,7 @@ public:
 
   void swapBuffers() override
   {
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
     if (m_backend == Backend::NONE || !m_gl.backbufferSurface() || !m_glCtx ||
         !m_glCtx->isValid()) {
       return;
@@ -181,7 +183,7 @@ public:
 
   bool gpuAcceleration() const override
   {
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
     return (m_backend == Backend::GL);
 #else
     return false;
@@ -196,8 +198,10 @@ public:
     T::setGpuAcceleration(state);
   }
 
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
   GrDirectContext* sk_grCtx() const override { return m_gl.grCtx(); }
+#else
+  GrDirectContext* sk_grCtx() const override { return nullptr; }
 #endif
 
 protected:
@@ -228,20 +232,20 @@ protected:
 
   enum class Backend {
     NONE,
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
     GL,
 #endif
   };
 
   Backend backend() const { return m_backend; }
 
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
   std::unique_ptr<GLContext> m_glCtx;
   SkiaGL m_gl;
 #endif
 
 private:
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
   void detachGpuContext()
   {
     m_gl.detachGL();

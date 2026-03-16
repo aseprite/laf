@@ -11,7 +11,7 @@
 #include "base/disable_copying.h"
 #include "gfx/size.h"
 
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
   #include "include/core/SkColorSpace.h"
   #include "include/core/SkRefCnt.h"
   #include "include/core/SkSurface.h"
@@ -21,7 +21,7 @@
 
 namespace os {
 
-#if SK_SUPPORT_GPU
+#if SK_SUPPORT_GPU && SK_GL
 
 class SkiaGL {
 public:
@@ -48,7 +48,7 @@ private:
   DISABLE_COPYING(SkiaGL);
 };
 
-#else // !SK_SUPPORT_GPU
+#else // !SK_SUPPORT_GPU || !SK_GL
 
 class SkiaGL {};
 

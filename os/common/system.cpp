@@ -52,6 +52,9 @@ SystemRef System::make()
 #if LAF_WINDOWS
   if (!ref)
     ref = System::makeWin();
+#elif LAF_IOS
+  if (!ref)
+    ref = System::makeIOS();
 #elif LAF_MACOS
   if (!ref)
     ref = System::makeOSX();
