@@ -93,8 +93,11 @@ private:
   void sendDelayedTouchEvents();
   void clearDelayedTouchEvents();
   void killTouchTimer();
+  void switchColorSpace();
   void checkColorSpaceChange();
   void checkDarkModeChange();
+  std::string readIcc() const;
+  os::ColorSpaceRef readColorSpace() const;
 
   void openWintabCtx();
   void closeWintabCtx();
@@ -228,6 +231,9 @@ private:
     std::vector<Event> delayedEvents;
     Touch();
   }* m_touch;
+
+  // Whether we are using WinRT to receive color space events, to avoid checking manually.
+  bool m_isReceivingColorSpaceEvents;
 
 #if OS_USE_POINTER_API_FOR_MOUSE
   // Emulate double-click with pointer API. I guess that this should
