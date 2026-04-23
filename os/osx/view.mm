@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2025  Igara Studio S.A.
+// Copyright (C) 2018-present  Igara Studio S.A.
 // Copyright (C) 2015-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -727,8 +727,11 @@ os::DragEvent newDragEvent(id<NSDraggingInfo> sender)
 
 - (void)setTranslateDeadKeys:(BOOL)state
 {
-  g_textInput = (state ? true : false);
-  g_lastDeadKeyState = 0;
+  bool newState = (state ? true : false);
+  if (g_textInput != newState) {
+    g_textInput = newState;
+    g_lastDeadKeyState = 0;
+  }
 }
 
 - (void)queueEvent:(os::Event&)ev
