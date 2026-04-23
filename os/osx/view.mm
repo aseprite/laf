@@ -727,8 +727,11 @@ os::DragEvent newDragEvent(id<NSDraggingInfo> sender)
 
 - (void)setTranslateDeadKeys:(BOOL)state
 {
-  g_textInput = (state ? true : false);
-  g_lastDeadKeyState = 0;
+  bool newState = (state ? true : false);
+  if (g_textInput != newState) {
+    g_textInput = newState;
+    g_lastDeadKeyState = 0;
+  }
 }
 
 - (void)queueEvent:(os::Event&)ev
