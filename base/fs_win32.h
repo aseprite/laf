@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2020-2025 Igara Studio S.A.
+// Copyright (c) 2020-present Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -42,9 +42,10 @@ size_t file_size(const std::string& path)
   return (_wstat(from_utf8(path).c_str(), &sts) == 0) ? sts.st_size : 0;
 }
 
-void move_file(const std::string& src, const std::string& dst)
+void move_file(const std::string& src, const std::string& dst, bool overwrite)
 {
-  BOOL result = ::MoveFile(from_utf8(src).c_str(), from_utf8(dst).c_str());
+  DWORD flags = (overwrite ? MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED : 0);
+  BOOL result = ::MoveFileEx(from_utf8(src).c_str(), from_utf8(dst).c_str(), flags);
   if (result == 0)
     throw Win32Exception("Error moving file");
 }
