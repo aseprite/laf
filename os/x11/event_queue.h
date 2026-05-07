@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2021-2022  Igara Studio S.A.
+// Copyright (C) 2021-present  Igara Studio S.A.
 // Copyright (C) 2016-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -18,6 +18,8 @@
 
 namespace os {
 
+class WindowX11;
+
 class EventQueueX11 : public EventQueue {
 public:
   void queueEvent(const Event& ev) override;
@@ -25,6 +27,10 @@ public:
   void clearEvents() override;
 
   bool isEmpty() const { return m_events.empty(); }
+
+  // Removes the given window from an internal collection of windows
+  // with a "delayed ConfigureNotify" event.
+  void _removeWindowX11(WindowX11* window);
 
 private:
   void processX11Event(XEvent& event);
