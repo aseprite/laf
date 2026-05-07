@@ -28,6 +28,7 @@
 #include "os/window_spec.h"
 #include "os/x11/cursor.h"
 #include "os/x11/dnd.h"
+#include "os/x11/event_queue.h"
 #include "os/x11/keys.h"
 #include "os/x11/screen.h"
 #include "os/x11/system.h"
@@ -250,6 +251,9 @@ void WindowX11::removeWindow(WindowX11* window)
     ASSERT(it->second == window);
     g_activeWindows.erase(it);
   }
+
+  if (auto* queue = static_cast<EventQueueX11*>(EventQueue::instance()))
+    queue->_removeWindowX11(window);
 }
 
 WindowX11::WindowX11(::Display* display, const WindowSpec& spec)
@@ -909,6 +913,13 @@ void WindowX11::performWindowAction(const WindowAction action, const Event* ev)
   XSendEvent(m_display, root, 0, SubstructureNotifyMask | SubstructureRedirectMask, &event);
 }
 
+void WindowX11::delayedConfigureNotify()
+{
+  ASSERT(!m_unsentConfigureRc.empty());
+  onResize(m_unsentConfigureRc.size());
+  m_unsentConfigureRc = {};
+}
+
 void WindowX11::setWMClass(const std::string& res_class)
 {
   const std::string res_name = base::string_to_lower(res_class);
@@ -1120,12 +1131,23 @@ void WindowX11::processX11Event(XEvent& event)
                          event.xconfigure.width,
                          event.xconfigure.height);
 
-      if (rc.w > 0 && rc.h > 0 && rc.size() != m_lastConfigure.size()) {
-        m_lastConfigure = rc;
-        onResize(rc.size());
+      if (rc.w > 0 && rc.h > 0 && rc.size() != m_lastConfigureRc.size()) {
+        base::tick_t now = base::current_tick();
+        if (now - m_lastConfigureTime >= kResizeDelay) {
+          m_lastConfigureRc = rc;
+          m_unsentConfigureRc = {};
+          m_lastConfigureTime = now;
+          onResize(rc.size());
+        }
+        else {
+          // Save this ignored ConfigureNotify into
+          // m_unsentConfigureRc to be processed in
+          // delayedConfigureNotify() later.
+          m_unsentConfigureRc = rc;
+        }
       }
-      else if (rc.origin() != m_lastConfigure.origin()) {
-        m_lastConfigure = rc;
+      else if (rc.origin() != m_lastConfigureRc.origin()) {
+        m_lastConfigureRc = rc;
         notifyMoving();
       }
       break;

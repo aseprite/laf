@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2020-2022  Igara Studio S.A.
+// Copyright (C) 2020-present  Igara Studio S.A.
 // Copyright (C) 2016-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -82,6 +82,10 @@ void SkiaWindowX11::onPaint(const gfx::Rect& rc)
     const size_t requiredSize = info.computeByteSize(rowBytes);
     if (requiredSize > m_buffer.size())
       m_buffer.resize(requiredSize);
+
+    // Clear the buffer to avoid showing the previous rendered content
+    // displaced.
+    std::fill(m_buffer.begin(), m_buffer.end(), 0);
 
     if (scaled.installPixels(info, (void*)m_buffer.data(), rowBytes)) {
       SkPaint paint;

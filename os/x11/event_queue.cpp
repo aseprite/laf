@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2019-2022  Igara Studio S.A.
+// Copyright (C) 2019-present  Igara Studio S.A.
 // Copyright (C) 2016-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -18,11 +18,18 @@
 
 #include <sys/select.h>
 
+#include <set>
+
 #define EV_TRACE(...)
 
 namespace os {
 
 namespace {
+
+// List of windows where a ConfigureNotify event was delayed/ignored
+// because there were not enough time between two consecutive
+// ConfigureNotify, i.e. two resize events.
+std::set<WindowX11*> g_reconfigureWindows;
 
 #if !defined(NDEBUG)
 const char* get_event_name(XEvent& event)
@@ -162,6 +169,13 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
     }
   }
 
+  // Reconfigure/resize windows that ignored a ConfigureNotify event.
+  if (XEventsQueued(display, QueuedAfterFlush) == 0) {
+    for (WindowX11* win : g_reconfigureWindows)
+      win->delayedConfigureNotify();
+    g_reconfigureWindows.clear();
+  }
+
   if (!m_events.try_pop(ev))
     ev.setType(Event::None);
 }
@@ -177,8 +191,20 @@ void EventQueueX11::processX11Event(XEvent& event)
 
   WindowX11* window = WindowX11::getPointerFromHandle(event.xany.window);
   // In MappingNotify the window can be nullptr
-  if (window)
+  if (window) {
     window->processX11Event(event);
+
+    // In case that the ConfigureNotify was ignored...
+    if (event.type == ConfigureNotify && !window->unsentConfigureRc().isEmpty())
+      g_reconfigureWindows.insert(window);
+  }
+}
+
+void EventQueueX11::_removeWindowX11(WindowX11* window)
+{
+  auto it = g_reconfigureWindows.find(window);
+  if (it != g_reconfigureWindows.end())
+    g_reconfigureWindows.erase(it);
 }
 
 } // namespace os
