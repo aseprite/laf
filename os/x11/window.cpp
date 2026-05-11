@@ -915,7 +915,7 @@ void WindowX11::performWindowAction(const WindowAction action, const Event* ev)
 
 void WindowX11::delayedConfigureNotify()
 {
-  ASSERT(!m_unsentConfigureRc.empty());
+  ASSERT(!m_unsentConfigureRc.isEmpty());
   onResize(m_unsentConfigureRc.size());
   m_unsentConfigureRc = {};
 }
