@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2024-2025 Igara Studio S.A.
+// Copyright (c) 2024-present Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include "base/exception.h"
 #include "base/file_content.h"
 #include "base/fs.h"
 
@@ -460,6 +461,37 @@ TEST(FS, CopyFiles)
   copy_file("_test_orig_.tmp", dst, true);
 
   EXPECT_EQ(data, read_file_content(dst));
+}
+
+TEST(FS, MoveFiles)
+{
+  std::vector<uint8_t> data = { 'a', 'b', 'c' };
+  std::vector<uint8_t> data2 = { 'x', 'y', 'z' };
+  const std::string src = "_test_moved_a.tmp";
+  const std::string dst = "_test_moved_b.tmp";
+
+  if (is_file(dst))
+    delete_file(dst);
+
+  write_file_content(src, data.data(), data.size());
+  EXPECT_TRUE(is_file(src));
+
+  move_file(src, dst);
+  EXPECT_FALSE(is_file(src));
+  EXPECT_EQ(data, read_file_content(dst));
+
+  write_file_content(src, data2.data(), data2.size());
+
+  // Move without "overwrite" flag
+  // TODO Unix-like systems throw a std::runtime_error but Windows
+  //      base::Win32Exception (which is an std::exception) probably
+  //      we should change base::Exception to a std::runtime_error
+  EXPECT_THROW(move_file(src, dst), std::exception);
+  EXPECT_EQ(data, read_file_content(dst));
+
+  // Move with "overwrite" flag
+  EXPECT_NO_THROW(move_file(src, dst, true));
+  EXPECT_EQ(data2, read_file_content(dst));
 }
 
 TEST(FS, ListFiles)

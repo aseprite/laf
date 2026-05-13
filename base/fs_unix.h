@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2021-2025 Igara Studio S.A.
+// Copyright (c) 2021-present Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -63,8 +63,12 @@ size_t file_size(const std::string& path)
   return (stat(path.c_str(), &sts) == 0) ? sts.st_size : 0;
 }
 
-void move_file(const std::string& src, const std::string& dst)
+void move_file(const std::string& src, const std::string& dst, bool overwrite)
 {
+  // Just in case, avoid to overwrite 'dst' if overwrite == false
+  if (!overwrite && is_file(dst))
+    throw std::runtime_error("Error moving file, destination file already exists: " +
+                             std::string(std::strerror(errno)));
   int result = std::rename(src.c_str(), dst.c_str());
   if (result != 0)
     throw std::runtime_error("Error moving file: " + std::string(std::strerror(errno)));

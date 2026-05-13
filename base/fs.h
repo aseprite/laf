@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2020-2025 Igara Studio S.A.
+// Copyright (c) 2020-present Igara Studio S.A.
 // Copyright (c) 2001-2018 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -32,7 +32,7 @@ bool is_absolute_path(const std::string& path);
 
 size_t file_size(const std::string& path);
 
-void move_file(const std::string& src, const std::string& dst);
+void move_file(const std::string& src, const std::string& dst, bool overwrite = false);
 void copy_file(const std::string& src, const std::string& dst, bool overwrite);
 void delete_file(const std::string& path);
 
