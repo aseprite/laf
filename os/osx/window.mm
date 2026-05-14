@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2019-2025  Igara Studio S.A.
+// Copyright (C) 2019-present  Igara Studio S.A.
 // Copyright (C) 2012-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -129,6 +129,13 @@
 
     if (spec->modal())
       self.level = NSModalPanelWindowLevel;
+
+    if (spec->parent()) {
+      NSWindow* parent =
+        (__bridge NSWindow*)static_cast<os::WindowOSX*>(spec->parent())->nativeHandle();
+      if (parent.level > self.level)
+        self.level = parent.level;
+    }
 
     // Hide the "View > Show Tab Bar" menu item
     if ([self respondsToSelector:@selector(setTabbingMode:)])
