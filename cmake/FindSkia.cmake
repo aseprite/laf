@@ -117,13 +117,14 @@ endif()
 
 # We require zlib because freetype expects to be linked with zlib
 if(NOT ZLIB_LIBRARIES)
+  set(ZLIB_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib/src/zlib-project-build")
   if(UNIX)
-    set(ZLIB_LIB_FILE "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib/lib/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    set(ZLIB_LIB_FILE "${ZLIB_OUTPUT_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}z${CMAKE_STATIC_LIBRARY_SUFFIX}")
   else()
     if(MSVC AND CMAKE_BUILD_TYPE STREQUAL Debug)
       set(ZLIB_MSVC_DEBUG_POSTFIX "d")
     endif()
-    set(ZLIB_LIB_FILE "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib/lib/zlib${ZLIB_MSVC_DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    set(ZLIB_LIB_FILE "${ZLIB_OUTPUT_DIR}/zlibstatic${ZLIB_MSVC_DEBUG_POSTFIX}${CMAKE_STATIC_LIBRARY_SUFFIX}")
   endif()
 
   set(LAF_ARGS_FOR_EXTERNAL_PROJECT)
@@ -134,7 +135,7 @@ if(NOT ZLIB_LIBRARIES)
     -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}
     -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
     -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
-  )
+    -DBUILD_SHARED_LIBS:BOOL=OFF)
 
   include(ExternalProject)
   ExternalProject_Add(zlib-project
@@ -143,6 +144,7 @@ if(NOT ZLIB_LIBRARIES)
     PREFIX           "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib"
     INSTALL_DIR      "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib"
     BUILD_BYPRODUCTS "${ZLIB_LIB_FILE}"
+    BUILD_COMMAND    "${CMAKE_COMMAND}" --build "${ZLIB_OUTPUT_DIR}" --target zlibstatic
     CMAKE_CACHE_ARGS ${LAF_ARGS_FOR_EXTERNAL_PROJECT})
 
   ExternalProject_Get_Property(zlib-project install_dir)
@@ -157,7 +159,7 @@ if(NOT ZLIB_LIBRARIES)
     INTERFACE_INCLUDE_DIRECTORIES ${ZLIB_INCLUDE_DIRS})
   add_dependencies(zlib zlib-project)
 
-  set(ZLIB_LIBRARY zlib)
+  set(ZLIB_LIBRARY ${ZLIB_LIB_FILE})
   set(ZLIB_LIBRARIES ${ZLIB_LIBRARY})
 endif()
 

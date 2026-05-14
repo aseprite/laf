@@ -87,4 +87,4 @@ jobs:
         if [[ "${{ runner.os }}" == "Linux" ]] ; then
           export XVFB=xvfb-run
         fi
-        $XVFB ctest --output-on-failure --exclude-regex app_main_tests
+        $XVFB ctest --output-on-failure
