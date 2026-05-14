@@ -9,20 +9,23 @@
   #include "config.h"
 #endif
 
-#include <queue>
-
-#include <windows.h>
-
-#include "os/win/event_queue.h"
-
 #include "base/time.h"
+#include "os/win/event_queue.h"
 #include "os/win/ime_manager.h"
 
 namespace os {
 
+EventQueueWin::EventQueueWin() : m_sleeping(false)
+{
+  m_threadId = GetCurrentThreadId();
+}
+
 void EventQueueWin::queueEvent(const Event& ev)
 {
   m_events.push(ev);
+
+  if (m_sleeping.load(std::memory_order_acquire))
+    PostThreadMessage(m_threadId, WM_NULL, 0, 0);
 }
 
 void EventQueueWin::clearEvents()
@@ -38,8 +41,9 @@ void EventQueueWin::getEvent(Event& ev, double timeout)
   ev.setWindow(nullptr);
 
   while (m_events.empty()) {
-    BOOL res;
+    m_sleeping.store(true, std::memory_order_release);
 
+    BOOL res;
     if (timeout == kWithoutTimeout) {
       res = GetMessage(&msg, nullptr, 0, 0);
     }
@@ -55,6 +59,8 @@ void EventQueueWin::getEvent(Event& ev, double timeout)
       }
       res = PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE);
     }
+
+    m_sleeping.store(false, std::memory_order_release);
 
     if (res) {
       // Avoid transforming WM_KEYDOWN/UP into WM_DEADCHAR/WM_CHAR

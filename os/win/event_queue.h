@@ -13,17 +13,23 @@
 #include "os/event.h"
 #include "os/event_queue.h"
 
+#include <atomic>
 #include <queue>
+#include <windows.h>
 
 namespace os {
 
 class EventQueueWin : public EventQueue {
 public:
+  EventQueueWin();
+
   void queueEvent(const Event& ev) override;
   void getEvent(Event& ev, double timeout) override;
   void clearEvents();
 
 private:
+  DWORD m_threadId;
+  std::atomic<bool> m_sleeping;
   base::concurrent_queue<Event> m_events;
 };
 
