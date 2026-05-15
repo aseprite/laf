@@ -34,6 +34,7 @@
 #include "os/x11/x11.h"
 #include "os/x11/xinput.h"
 
+#include <algorithm>
 #include <array>
 #include <map>
 #include <set>
@@ -108,6 +109,12 @@ Atom XdndTypeList = 0;
 Atom XdndActionList = 0;
 Atom XdndSelection = 0;
 Atom URI_LIST = 0;
+Atom UTF8_STRING = 0;
+Atom TEXT = 0;
+Atom TEXT_PLAIN = 0;
+Atom TEXT_PLAIN_UTF8 = 0;
+Atom GNOME_COPIED_FILES = 0;
+Atom NETSCAPE_URL = 0;
 
 std::unique_ptr<DndDataX11> g_dndData;
 
@@ -150,22 +157,62 @@ std::string decode_url(const std::string& in)
   out.reserve(in.size());
 
   int i;
-  if (std::strncmp(in.c_str(), "file://", 7) == 0)
+  if (std::strncmp(in.c_str(), "file://localhost/", 17) == 0)
+    i = 16;
+  else if (std::strncmp(in.c_str(), "file:///", 8) == 0)
     i = 7;
   else
-    i = 0;
+    return std::string();
 
   for (; i < in.size(); ++i) {
     auto c = in[i];
-    if (c == '%' && i + 2 < in.size()) {
+    if (c == '%' && i + 2 < in.size() && base::is_hex_digit(in[i + 1]) &&
+        base::is_hex_digit(in[i + 2])) {
       c = ((base::hex_to_int(in[i + 1]) << 4) | (base::hex_to_int(in[i + 2])));
       i += 2;
     }
     out.push_back(c);
   }
 
-  base::trim_string(out, out);
+  if (!out.empty() && out.back() == '\r')
+    out.pop_back();
   return out;
+}
+
+base::paths decode_uri_list(const std::string& uriList)
+{
+  std::vector<std::string> uris;
+  base::split_string(uriList, uris, "\n");
+
+  base::paths files;
+  for (const std::string& uri : uris) {
+    if (uri.empty() || uri[0] == '#')
+      continue;
+
+    std::string file = decode_url(uri);
+    if (!file.empty())
+      files.push_back(file);
+  }
+
+  return files;
+}
+
+base::paths decode_dropped_files(const std::string& data)
+{
+  base::paths files = decode_uri_list(data);
+  if (!files.empty())
+    return files;
+
+  std::vector<std::string> paths;
+  base::split_string(data, paths, "\n");
+  for (std::string path : paths) {
+    if (!path.empty() && path.back() == '\r')
+      path.pop_back();
+    if (!path.empty() && path[0] == '/')
+      files.push_back(path);
+  }
+
+  return files;
 }
 
 std::string get_x11_wm_class_name()
@@ -208,6 +255,65 @@ std::vector<Atom> get_atom_list_property(::Display* display,
     result.push_back(prop[i]);
   XFree(prop);
   return result;
+}
+
+DropOperation xdnd_action_to_drop_operation(Atom action)
+{
+  if (action == XdndActionCopy)
+    return DropOperation::Copy;
+  if (action == XdndActionMove)
+    return DropOperation::Move;
+  if (action == XdndActionLink)
+    return DropOperation::Link;
+  return DropOperation::None;
+}
+
+Atom drop_operation_to_xdnd_action(DropOperation op)
+{
+  if (op == DropOperation::Move)
+    return XdndActionMove;
+  if (op == DropOperation::Link)
+    return XdndActionLink;
+  if (op == DropOperation::Copy)
+    return XdndActionCopy;
+  return 0;
+}
+
+void add_unique_atom(std::vector<Atom>& atoms, Atom atom)
+{
+  if (atom && std::find(atoms.begin(), atoms.end(), atom) == atoms.end())
+    atoms.push_back(atom);
+}
+
+std::vector<Atom> get_xdnd_target_fallbacks(const std::vector<Atom>& advertisedTypes)
+{
+  std::vector<Atom> targets;
+
+  add_unique_atom(targets, URI_LIST);
+
+  const Atom supportedTargets[] = {
+    URI_LIST, GNOME_COPIED_FILES, TEXT_PLAIN_UTF8, TEXT_PLAIN, UTF8_STRING,
+    TEXT,     NETSCAPE_URL,       XA_STRING,
+  };
+
+  for (Atom advertisedType : advertisedTypes) {
+    for (Atom supportedTarget : supportedTargets) {
+      if (advertisedType == supportedTarget)
+        add_unique_atom(targets, supportedTarget);
+    }
+  }
+
+  return targets;
+}
+
+bool request_next_xdnd_target(::Display* display, ::Window window)
+{
+  while (g_dndData && g_dndData->targetFallbackIndex < int(g_dndData->targetFallbacks.size())) {
+    const Atom target = g_dndData->targetFallbacks[g_dndData->targetFallbackIndex++];
+    XConvertSelection(display, XdndSelection, target, XdndSelection, window, g_dndData->dropTime);
+    return true;
+  }
+  return false;
 }
 
 } // anonymous namespace
@@ -469,6 +575,12 @@ WindowX11::WindowX11(::Display* display, const WindowSpec& spec)
     XdndActionList = XInternAtom(m_display, "XdndActionList", False);
     XdndSelection = XInternAtom(m_display, "XdndSelection", False);
     URI_LIST = XInternAtom(m_display, "text/uri-list", False);
+    UTF8_STRING = XInternAtom(m_display, "UTF8_STRING", False);
+    TEXT = XInternAtom(m_display, "TEXT", False);
+    TEXT_PLAIN = XInternAtom(m_display, "text/plain", False);
+    TEXT_PLAIN_UTF8 = XInternAtom(m_display, "text/plain;charset=utf-8", False);
+    GNOME_COPIED_FILES = XInternAtom(m_display, "x-special/gnome-copied-files", False);
+    NETSCAPE_URL = XInternAtom(m_display, "_NETSCAPE_URL", False);
   }
 
   Atom protocolVersion = 5;
@@ -1329,24 +1441,24 @@ void WindowX11::processX11Event(XEvent& event)
           get_atom_list_property(m_display, sourceWindow, XdndActionList, 0, 256);
         DropOperation ops = DropOperation::None;
         for (auto action : actions) {
-          if (action == XdndActionCopy)
-            ops |= DropOperation::Copy;
-          if (action == XdndActionMove)
-            ops |= DropOperation::Move;
-          if (action == XdndActionLink)
-            ops |= DropOperation::Link;
+          ops |= xdnd_action_to_drop_operation(action);
         }
+        if (ops == DropOperation::None)
+          ops = DropOperation::Copy | DropOperation::Move | DropOperation::Link;
         g_dndData->supportedOperations = ops;
 
         DragEvent ev(this, g_dndData->supportedOperations, gfx::Point(), nullptr);
         notifyDragEnter(ev);
       }
       else if (event.xclient.message_type == XdndLeave) {
+        if (!g_dndData)
+          break;
+
         DragEvent ev(this, g_dndData->supportedOperations, gfx::Point(), nullptr);
         notifyDragLeave(ev);
 
-        ASSERT(g_dndData);
-        g_dndData.reset();
+        if (!g_dndData->dropInProgress)
+          g_dndData.reset();
       }
       else if (event.xclient.message_type == XdndPosition) {
         auto sourceWindow = (::Window)event.xclient.data.l[0];
@@ -1361,13 +1473,18 @@ void WindowX11::processX11Event(XEvent& event)
 
         // Save the latest mouse position reported by the source
         // window (absolute position)
-        if (g_dndData)
+        if (g_dndData) {
           g_dndData->position = pt;
+          g_dndData->selectedOperation = xdnd_action_to_drop_operation(event.xclient.data.l[4]);
+        }
 
         DragEvent ev(this, g_dndData->supportedOperations, pt, nullptr);
         notifyDrag(ev);
 
         DropOperation dropResult = ev.dropResult();
+        if (dropResult != DropOperation::None &&
+            g_dndData->selectedOperation != DropOperation::None)
+          dropResult = g_dndData->selectedOperation;
         if (!hasDragTarget())
           dropResult = DropOperation::Copy; // For DropFiles event
 
@@ -1382,10 +1499,7 @@ void WindowX11::processX11Event(XEvent& event)
         event2.xclient.data.l[0] = m_window;
         // Bit 0 = this window accept the drop
         event2.xclient.data.l[1] = (dropResult != DropOperation::None ? 1 : 0);
-        event2.xclient.data.l[4] = (dropResult == DropOperation::Move ? XdndActionMove :
-                                    dropResult == DropOperation::Link ? XdndActionLink :
-                                    dropResult == DropOperation::Copy ? XdndActionCopy :
-                                                                        0);
+        event2.xclient.data.l[4] = drop_operation_to_xdnd_action(dropResult);
         XSendEvent(m_display, sourceWindow, 0, 0, &event2);
       }
       else if (event.xclient.message_type == XdndDrop) {
@@ -1400,52 +1514,47 @@ void WindowX11::processX11Event(XEvent& event)
         // TODO in the best case we should notifyDrop() here and add a
         //      way to get data on demand with DragDataProviderX11
 
-        if (g_dndData->containsType(URI_LIST)) {
-          // Ask for the XdndSelection, we're going to receive the
-          // dropped items in the SelectionNotify.
-          XConvertSelection(m_display, XdndSelection, URI_LIST, XdndSelection, m_window, time);
-        }
+        g_dndData->dropTime = time;
+        g_dndData->dropInProgress = true;
+        g_dndData->targetFallbackIndex = 0;
+        g_dndData->targetFallbacks = get_xdnd_target_fallbacks(g_dndData->types);
+
+        // Ask for the XdndSelection, we're going to receive the
+        // dropped items in the SelectionNotify.
+        request_next_xdnd_target(m_display, m_window);
       }
       break;
 
     case SelectionNotify:
-      if (event.xselection.property == XdndSelection) {
+      if (event.xselection.selection == XdndSelection) {
         ASSERT(g_dndData);
         if (!g_dndData)
           break;
 
         bool successful = false;
-        Atom actual_type;
-        int actual_format;
-        unsigned long nitems;
-        unsigned long bytes_after;
+        bool tryNextTarget = false;
+        Atom actual_type = 0;
+        int actual_format = 0;
+        unsigned long nitems = 0;
+        unsigned long bytes_after = 0;
         char* prop = nullptr;
-        const int res = XGetWindowProperty(m_display,
-                                           m_window,
-                                           XdndSelection,
-                                           0,
-                                           256,
-                                           False,
-                                           URI_LIST,
-                                           &actual_type,
-                                           &actual_format,
-                                           &nitems,
-                                           &bytes_after,
-                                           (unsigned char**)&prop);
+        const int res = (event.xselection.property ? XGetWindowProperty(m_display,
+                                                                        m_window,
+                                                                        event.xselection.property,
+                                                                        0,
+                                                                        0x1FFFFFFF,
+                                                                        True,
+                                                                        AnyPropertyType,
+                                                                        &actual_type,
+                                                                        &actual_format,
+                                                                        &nitems,
+                                                                        &bytes_after,
+                                                                        (unsigned char**)&prop) :
+                                                     !Success);
 
         if (prop) {
-          if (actual_type == URI_LIST) {
-            std::vector<std::string> files;
-            base::split_string(std::string(prop), files, "\n");
-            for (auto it = files.begin(); it != files.end();) {
-              const std::string f = decode_url(*it);
-              if (f.empty())
-                it = files.erase(it);
-              else {
-                *it = f;
-                ++it;
-              }
-            }
+          if (actual_format == 8) {
+            base::paths files = decode_dropped_files(std::string(prop, nitems));
 
             if (!files.empty()) {
               // Drop notification
@@ -1454,6 +1563,7 @@ void WindowX11::processX11Event(XEvent& event)
                            g_dndData->position,
                            std::make_unique<DragDataProviderX11>(m_display, m_window, files));
               notifyDrop(ev);
+              successful = ev.acceptDrop();
 
               // Send DropFiles event for backward compatibility
               if (!ev.acceptDrop() && !hasDragTarget()) {
@@ -1466,10 +1576,22 @@ void WindowX11::processX11Event(XEvent& event)
                 successful = true;
               }
             }
+            else {
+              tryNextTarget = true;
+            }
+          }
+          else {
+            tryNextTarget = true;
           }
 
           XFree(prop);
         }
+        else {
+          tryNextTarget = true;
+        }
+
+        if (!successful && tryNextTarget && request_next_xdnd_target(m_display, m_window))
+          break;
 
         XEvent event2;
         memset(&event2, 0, sizeof(event2));
@@ -1480,7 +1602,7 @@ void WindowX11::processX11Event(XEvent& event)
         event2.xclient.data.l[0] = m_window;
         // Set bit 0 when the drop operation was accepted.
         event2.xclient.data.l[1] = (successful ? 1 : 0);
-        event2.xclient.data.l[2] = 0;
+        event2.xclient.data.l[2] = (successful ? XdndActionCopy : 0);
         event2.xclient.data.l[3] = 0;
         XSendEvent(m_display, g_dndData->sourceWindow, 0, 0, &event2);
 

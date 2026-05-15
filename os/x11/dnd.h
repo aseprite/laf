@@ -20,7 +20,12 @@ struct DndDataX11 {
   ::Window sourceWindow = 0;
   gfx::Point position;
   DropOperation supportedOperations = DropOperation::None;
+  DropOperation selectedOperation = DropOperation::None;
   std::vector<Atom> types;
+  std::vector<Atom> targetFallbacks;
+  Time dropTime = CurrentTime;
+  int targetFallbackIndex = 0;
+  bool dropInProgress = false;
 
   bool containsType(Atom dataType)
   {
