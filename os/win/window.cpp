@@ -67,6 +67,18 @@
 #endif
 
 namespace os {
+namespace {
+void query_mouse_buttons(std::map<Event::MouseButton, bool>& map)
+{
+  std::vector<Event::MouseButton> buttons;
+  const bool mouseSwapped = GetSystemMetrics(SM_SWAPBUTTON);
+  map[Event::LeftButton] = GetAsyncKeyState(mouseSwapped ? VK_RBUTTON : VK_LBUTTON) < 0;
+  map[Event::RightButton] = GetAsyncKeyState(mouseSwapped ? VK_LBUTTON : VK_RBUTTON) < 0;
+  map[Event::MiddleButton] = GetAsyncKeyState(VK_MBUTTON) < 0;
+  map[Event::X1Button] = GetAsyncKeyState(VK_XBUTTON1) < 0;
+  map[Event::X2Button] = GetAsyncKeyState(VK_XBUTTON2) < 0;
+}
+} // namespace
 
 // Converts an os::Hit to a Win32 hit test value
 static int hit2hittest[] = {
@@ -1198,12 +1210,31 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
       }
       break;
 
-    case WM_ENTERSIZEMOVE: onStartResizing(); break;
+    case WM_ENTERSIZEMOVE: {
+      query_mouse_buttons(m_buttonsAtResizeStart);
+      onStartResizing();
+    } break;
 
-    case WM_EXITSIZEMOVE:
+    case WM_EXITSIZEMOVE: {
       checkColorSpaceChange();
       onEndResizing();
-      break;
+
+      // When initiated by a mouse event, WM_EXITSIZEMOVE never sends a WM_NCLBUTTONUP so if we're
+      // keeping track of the mouse button state via events we'll have a discrepancy with the real
+      // buttons. Unfortunately we can't know if the WM_ENTER/EXITSIZEMOVE was caused by mouse
+      // events so we have to compare the button states and send the mouseUp events for the ones
+      // that have actually had changes.
+      std::map<Event::MouseButton, bool> currentButtons;
+      query_mouse_buttons(currentButtons);
+      for (const auto& [button, wasPressed] : m_buttonsAtResizeStart) {
+        if (wasPressed && currentButtons[button] == false) {
+          Event ev;
+          ev.setType(Event::MouseUp);
+          ev.setButton(button);
+          queueEvent(ev);
+        }
+      }
+    } break;
 
     case WM_SETTINGCHANGE:
       checkDarkModeChange();

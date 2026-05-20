@@ -146,6 +146,8 @@ private:
   gfx::Rect m_restoredFrame;
 #endif
 
+  std::map<Event::MouseButton, bool> m_buttonsAtResizeStart;
+
   std::unique_ptr<DragTargetAdapter> m_dragTargetAdapter = nullptr;
 
   int m_scale;
