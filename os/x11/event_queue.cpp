@@ -11,12 +11,15 @@
 
 #include "os/x11/event_queue.h"
 
+#include "base/scoped_value.h"
 #include "base/thread.h"
 #include "os/x11/window.h"
 
 #include <X11/Xlib.h>
 
+#include <sys/eventfd.h>
 #include <sys/select.h>
+#include <unistd.h>
 
 #include <set>
 
@@ -74,26 +77,46 @@ const char* get_event_name(XEvent& event)
 }
 #endif
 
-void wait_file_descriptor_for_reading(int fd, base::tick_t timeoutMilliseconds)
+// Used to wake up the queue.
+int g_wakeup_fd = 0;
+
+void wait_file_descriptor_for_reading(base::tick_t msecsTimeout, bool infinite)
 {
+  ::Display* display = X11::instance()->display();
+  const int x11_fd = ConnectionNumber(display);
+
   fd_set fds;
   FD_ZERO(&fds);
-  FD_SET(fd, &fds);
+  FD_SET(x11_fd, &fds);
+  FD_SET(g_wakeup_fd, &fds);
 
   timeval timeout;
-  timeout.tv_sec = timeoutMilliseconds / 1000;
-  timeout.tv_usec = ((timeoutMilliseconds % 1000) * 1000);
+  timeout.tv_sec = msecsTimeout / 1000;
+  timeout.tv_usec = ((msecsTimeout % 1000) * 1000);
 
   // First argument must be set to the highest-numbered file
   // descriptor in any of the three sets, plus 1.
-  select(fd + 1, &fds, nullptr, nullptr, &timeout);
+  select(std::max(x11_fd, g_wakeup_fd) + 1, &fds, nullptr, nullptr, infinite ? nullptr : &timeout);
 }
 
 } // anonymous namespace
 
+EventQueueX11::EventQueueX11() : m_sleeping(false)
+{
+  g_wakeup_fd = eventfd(0, EFD_NONBLOCK);
+}
+
+EventQueueX11::~EventQueueX11()
+{
+  close(g_wakeup_fd);
+}
+
 void EventQueueX11::queueEvent(const Event& ev)
 {
   m_events.push(ev);
+
+  if (m_sleeping)
+    eventfd_write(g_wakeup_fd, 1);
 }
 
 void EventQueueX11::getEvent(Event& ev, double timeout)
@@ -105,16 +128,19 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
   ::Display* display = X11::instance()->display();
   XSync(display, False);
 
+  int waitTimeout = 0;
+  bool infiniteWait = false;
+
   XEvent event;
   int events = XEventsQueued(display, QueuedAlready);
   if (events == 0) {
     if (timeout == kWithoutTimeout) {
       // Wait for a XEvent only if we have an empty queue of os::Event
       // (so there is no more events to process in our own queue).
-      if (m_events.empty())
-        events = 1;
-      else
-        events = 0;
+      if (m_events.empty()) {
+        waitTimeout = 1;
+        infiniteWait = true;
+      }
     }
     else if (timeout > 0.0) {
       // Wait timeout (waiting the X11 connection file description for
@@ -123,13 +149,18 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
       // XNextEvent() with a timeout.
       const base::tick_t timeoutMsecs = base::tick_t(timeout * 1000.0);
       const base::tick_t elapsedMsecs = base::current_tick() - startTime;
-      if (int(timeoutMsecs - elapsedMsecs) > 0) {
-        const int connFileDesc = ConnectionNumber(display);
-        wait_file_descriptor_for_reading(connFileDesc, timeoutMsecs - elapsedMsecs);
-      }
-
-      events = XEventsQueued(display, QueuedAlready);
+      waitTimeout = timeoutMsecs - elapsedMsecs;
     }
+  }
+
+  // Wait for any message
+  if (waitTimeout > 0) {
+    // Reset wakeup flag
+    eventfd_t value = 0;
+    eventfd_read(g_wakeup_fd, &value);
+
+    base::ScopedValue sleeping(m_sleeping, true);
+    wait_file_descriptor_for_reading(waitTimeout, infiniteWait);
   }
 
   // If the user is not converting dead keys it means that we are not
@@ -139,6 +170,7 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
   // key pressed.
   const bool removeRepeats = (!WindowX11::textInput());
 
+  events = XEventsQueued(display, QueuedAlready);
   for (int i = 0; i < events; ++i) {
     XNextEvent(display, &event);
 

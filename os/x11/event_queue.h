@@ -14,6 +14,7 @@
 #include "os/event_queue.h"
 #include "os/x11/x11.h"
 
+#include <atomic>
 #include <deque>
 
 namespace os {
@@ -22,6 +23,9 @@ class WindowX11;
 
 class EventQueueX11 : public EventQueue {
 public:
+  EventQueueX11();
+  ~EventQueueX11();
+
   void queueEvent(const Event& ev) override;
   void getEvent(Event& ev, double timeout) override;
   void clearEvents() override;
@@ -36,6 +40,7 @@ private:
   void processX11Event(XEvent& event);
 
   base::concurrent_queue<Event> m_events;
+  std::atomic<bool> m_sleeping;
 };
 
 using EventQueueImpl = EventQueueX11;

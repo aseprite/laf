@@ -26,22 +26,20 @@ std::condition_variable cv;
 
 std::thread queue_callback()
 {
-  return std::thread([]{
+  return std::thread([] {
     // Wait a little of time so we call getEvent() from the main thread.
     std::this_thread::sleep_for(15ms);
 
     os::Event ev;
     ev.setType(os::Event::Callback);
-    ev.setCallback([]{
-      done = true;
-    });
+    ev.setCallback([] { done = true; });
     os::queue_event(ev);
   });
 }
 
 std::thread kill_me_in_two_seconds()
 {
-  return std::thread([]{
+  return std::thread([] {
     std::unique_lock lock(mutex);
     if (cv.wait_for(lock, 2s) == std::cv_status::timeout) {
       EXPECT_FALSE(true) << "Event queue is stuck";
@@ -61,8 +59,9 @@ TEST(EventQueue, WakeupForCallback)
     os::Event ev;
     os::EventQueue::instance()->getEvent(ev);
     switch (ev.type()) {
-      case os::Event::Callback:
-        ev.execCallback();
+      case os::Event::Callback: ev.execCallback(); break;
+      default:
+        // Do nothing
         break;
     }
   }
