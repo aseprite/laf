@@ -125,6 +125,9 @@ public:
             cmd += " --multiple";
         }
 
+        if (m_type == Type::OpenFolder)
+          cmd += " --directory";
+
         // TODO There is an feature request in Zenity to add
         // the --print-winid parameter:
         //

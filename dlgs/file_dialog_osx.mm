@@ -258,7 +258,8 @@ public:
       // Always show the extension
       [panel setExtensionHidden:NO];
 
-      std::string defPath = base::get_file_path(m_filename);
+      std::string defPath = m_type == Type::OpenFolder ? m_filename :
+                                                         base::get_file_path(m_filename);
       std::string defName = base::get_file_name(m_filename);
       if (!defPath.empty())
         [panel
