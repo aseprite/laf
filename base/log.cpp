@@ -9,6 +9,10 @@
   #include "config.h"
 #endif
 
+#ifdef LAF_WINDOWS
+  #include <windows.h>
+#endif
+
 #include "base/log.h"
 
 #include "base/debug.h"
@@ -83,8 +87,12 @@ static void LOGva(const char* format, va_list ap)
   }
 
 #ifdef _DEBUG
+  #ifdef LAF_WINDOWS
+  ::OutputDebugStringA(buf.data());
+  #else
   fputs(buf.data(), stderr);
   fflush(stderr);
+  #endif
 #endif
 }
 
