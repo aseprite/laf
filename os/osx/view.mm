@@ -280,7 +280,11 @@ using namespace os;
     CFRelease(strRef);
   }
 
-  if (scancode >= 0 && scancode < kKeyScancodes)
+  // Don't memorize non-modifier keys while Cmd is held, because macOS
+  // won't execute the key's keyUp for Cmd+key combination and the key
+  // will appear as stuck.
+  if (scancode >= 0 && scancode < kKeyScancodes &&
+      !(event.modifierFlags & NSEventModifierFlagCommand))
     g_pressedKeys[scancode] = (ev.unicodeChar() ? ev.unicodeChar() : 1);
 
   if (g_textInput) {
