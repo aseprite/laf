@@ -77,10 +77,6 @@ public:
 
   void performWindowAction(WindowAction action, const Event* event) override;
 
-  // Used to avoid several onResize() events.
-  const gfx::Rect& unsentConfigureRc() const { return m_unsentConfigureRc; }
-  void delayedConfigureNotify();
-
   ::Display* x11display() const { return m_display; }
   ::Window x11window() const { return m_window; }
   ::GC gc() const { return m_gc; }
@@ -120,13 +116,7 @@ private:
   ::XIC m_xic;
   int m_scale;
   gfx::Point m_lastMousePos;
-
-  // ConfigureNotify optimization.
   gfx::Rect m_lastConfigureRc;
-  gfx::Rect m_unsentConfigureRc;
-  base::tick_t m_lastConfigureTime = 0;
-  static const int kResizeDelay = 1000 / 30; // Milliseconds
-
   gfx::Border m_frameExtents;
   bool m_initializingActions = true;
   bool m_fullscreen = false;

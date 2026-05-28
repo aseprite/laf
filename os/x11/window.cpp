@@ -251,9 +251,6 @@ void WindowX11::removeWindow(WindowX11* window)
     ASSERT(it->second == window);
     g_activeWindows.erase(it);
   }
-
-  if (auto* queue = static_cast<EventQueueX11*>(EventQueue::instance()))
-    queue->_removeWindowX11FromDelayedConfigure(window);
 }
 
 WindowX11::WindowX11(::Display* display, const WindowSpec& spec)
@@ -913,13 +910,6 @@ void WindowX11::performWindowAction(const WindowAction action, const Event* ev)
   XSendEvent(m_display, root, 0, SubstructureNotifyMask | SubstructureRedirectMask, &event);
 }
 
-void WindowX11::delayedConfigureNotify()
-{
-  ASSERT(!m_unsentConfigureRc.isEmpty());
-  onResize(m_unsentConfigureRc.size());
-  m_unsentConfigureRc = {};
-}
-
 void WindowX11::setWMClass(const std::string& res_class)
 {
   const std::string res_name = base::string_to_lower(res_class);
@@ -1125,35 +1115,58 @@ void WindowX11::processX11Event(XEvent& event)
       }
       break;
 
+      // On Linux we receive a lot of ConfigureNotify events one after
+      // another. We should try to avoid processing as many events as
+      // possible and just keep the latest one (because each
+      // ConfigureNotify will resize the window and re-create/re-paint
+      // its surface).
     case ConfigureNotify: {
-      const gfx::Rect rc(event.xconfigure.x,
-                         event.xconfigure.y,
-                         event.xconfigure.width,
-                         event.xconfigure.height);
+      gfx::Rect rc(event.xconfigure.x,
+                   event.xconfigure.y,
+                   event.xconfigure.width,
+                   event.xconfigure.height);
 
-      if (rc.w > 0 && rc.h > 0 && rc.size() != m_lastConfigureRc.size()) {
-        base::tick_t now = base::current_tick();
-        if (now - m_lastConfigureTime >= kResizeDelay) {
-          m_lastConfigureRc = rc;
+      auto isConfigureEvent = [](Display* d, XEvent* e, XPointer w) -> Bool {
+        return (e->xany.type == ConfigureNotify && e->xproperty.window == (::Window)w);
+      };
 
-          if (!m_unsentConfigureRc.isEmpty()) {
-            // Remove this window from the queue of "pending ConfigureNotify"
-            if (auto* queue = static_cast<EventQueueX11*>(EventQueue::instance()))
-              queue->_removeWindowX11FromDelayedConfigure(this);
-            m_unsentConfigureRc = {};
-          }
-
-          m_lastConfigureTime = now;
-          onResize(rc.size());
-        }
-        else {
-          // Save this ignored ConfigureNotify into
-          // m_unsentConfigureRc to be processed in
-          // delayedConfigureNotify() later.
-          m_unsentConfigureRc = rc;
-        }
+      // Check if there are other resize events for this same window and use the latest one
+      XEvent event2;
+      while (XCheckIfEvent(m_display, &event2, isConfigureEvent, (XPointer)m_window)) {
+        rc = gfx::Rect(event2.xconfigure.x,
+                       event2.xconfigure.y,
+                       event2.xconfigure.width,
+                       event2.xconfigure.height);
       }
-      else if (rc.origin() != m_lastConfigureRc.origin()) {
+
+      // Join all exposure events in just one
+      gfx::Rect fullExpose;
+      while (XCheckWindowEvent(m_display, m_window, ExposureMask, &event2)) {
+        fullExpose |= gfx::Rect(event2.xexpose.x,
+                                event2.xexpose.y,
+                                event2.xexpose.width,
+                                event2.xexpose.height);
+      }
+      // Re-queue the latest exposure event
+      if (event2.xany.type == Expose && !fullExpose.isEmpty()) {
+        // Limit expose to the future window size.
+        fullExpose &= gfx::Rect(rc.size());
+
+        event2.xexpose.x = fullExpose.x;
+        event2.xexpose.y = fullExpose.y;
+        event2.xexpose.width = fullExpose.w;
+        event2.xexpose.height = fullExpose.h;
+        XPutBackEvent(m_display, &event2);
+      }
+
+      // New window size
+      if (!rc.isEmpty() && rc.size() != m_lastConfigureRc.size()) {
+        m_lastConfigureRc = rc;
+        onResize(rc.size());
+      }
+
+      // New window position
+      if (rc.origin() != m_lastConfigureRc.origin()) {
         m_lastConfigureRc = rc;
         notifyMoving();
       }

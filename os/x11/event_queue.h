@@ -32,10 +32,6 @@ public:
 
   bool isEmpty() const { return m_events.empty(); }
 
-  // Removes the given window from an internal collection of windows
-  // with a "delayed ConfigureNotify" event.
-  void _removeWindowX11FromDelayedConfigure(WindowX11* window);
-
 private:
   void processX11Event(XEvent& event);
 
