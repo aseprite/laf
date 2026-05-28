@@ -194,6 +194,11 @@ void EventQueueX11::getEvent(Event& ev, double timeout)
     else {
       processX11Event(event);
     }
+
+    // Update "events" variable as some event processing might have
+    // remove an event from the queue (search for XCheckIfEvent and
+    // XCheckWindowEvent).
+    events = XEventsQueued(display, QueuedAlready);
   }
 
   if (!m_events.try_pop(ev))
