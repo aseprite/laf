@@ -253,7 +253,7 @@ void WindowX11::removeWindow(WindowX11* window)
   }
 
   if (auto* queue = static_cast<EventQueueX11*>(EventQueue::instance()))
-    queue->_removeWindowX11(window);
+    queue->_removeWindowX11FromDelayedConfigure(window);
 }
 
 WindowX11::WindowX11(::Display* display, const WindowSpec& spec)
@@ -1135,7 +1135,14 @@ void WindowX11::processX11Event(XEvent& event)
         base::tick_t now = base::current_tick();
         if (now - m_lastConfigureTime >= kResizeDelay) {
           m_lastConfigureRc = rc;
-          m_unsentConfigureRc = {};
+
+          if (!m_unsentConfigureRc.isEmpty()) {
+            // Remove this window from the queue of "pending ConfigureNotify"
+            if (auto* queue = static_cast<EventQueueX11*>(EventQueue::instance()))
+              queue->_removeWindowX11FromDelayedConfigure(this);
+            m_unsentConfigureRc = {};
+          }
+
           m_lastConfigureTime = now;
           onResize(rc.size());
         }

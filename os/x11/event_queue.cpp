@@ -232,7 +232,7 @@ void EventQueueX11::processX11Event(XEvent& event)
   }
 }
 
-void EventQueueX11::_removeWindowX11(WindowX11* window)
+void EventQueueX11::_removeWindowX11FromDelayedConfigure(WindowX11* window)
 {
   auto it = g_reconfigureWindows.find(window);
   if (it != g_reconfigureWindows.end())
