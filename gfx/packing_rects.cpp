@@ -89,7 +89,7 @@ bool PackingRects::pack(const Size& size, base::task_token& token)
   int i = 0;
   for (auto& rc : m_rects)
     rectPtrs[i++] = &rc;
-  std::sort(rectPtrs.begin(), rectPtrs.end(), by_area);
+  std::stable_sort(rectPtrs.begin(), rectPtrs.end(), by_area);
 
   gfx::Region rgn(m_bounds);
   i = 0;
