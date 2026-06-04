@@ -63,6 +63,8 @@ public:
     // Connection to the X11 server (the Display* pointer returned by
     // XOpenDisplay()).
     void* x11display = nullptr;
+    enum class Backend : uint8_t { Autodetect, KDialog, Zenity };
+    Backend backend = Backend::Autodetect;
 #endif
   };
 
