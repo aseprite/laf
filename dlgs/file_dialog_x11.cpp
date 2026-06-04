@@ -13,11 +13,11 @@
 #include "base/file_handle.h"
 #include "base/fs.h"
 #include "base/log.h"
-#include "base/replace_string.h"
 #include "base/split_string.h"
 
 #include <X11/Xlib.h>
 
+#include <array>
 #include <cstdio> // popen/pclose()
 #include <cstring>
 
@@ -190,9 +190,78 @@ public:
         break;
       }
 
-      case CLITool::KDialog:
-        // TODO
+      case CLITool::KDialog: {
+        std::string cmd = "kdialog --separate-output";
+
+        cmd += " --attach ";
+        cmd += std::to_string(reinterpret_cast<::Window>(parent));
+
+        if (m_type == Type::OpenFiles)
+          cmd += " --multiple";
+
+        if (!m_title.empty()) {
+          cmd += " --title ";
+          cmd += quote_for_shell(m_title);
+        }
+
+        if (m_type == Type::SaveFile) {
+          cmd += " --getsavefilename ";
+          cmd += quote_for_shell(m_filename);
+        }
+        else if (m_type == Type::OpenFiles || m_type == Type::OpenFile) {
+          cmd += " --getopenfilename ";
+          cmd += quote_for_shell(m_initialDir);
+        }
+        else {
+          ASSERT(m_type == Type::OpenFolder);
+          cmd += " --getexistingdirectory ";
+          cmd += quote_for_shell(m_initialDir);
+        }
+
+        if (!m_filters.empty()) {
+          cmd += " \"All supported files (";
+          for (const auto& kv : m_filters) {
+            cmd += " *.";
+            cmd += kv.first;
+          }
+          cmd += ")|";
+          for (const auto& kv : m_filters) {
+            cmd += kv.second;
+            cmd += "|";
+          }
+          cmd.pop_back();
+          cmd += "\"";
+        }
+
+        FILE* f = popen(cmd.c_str(), "r");
+        if (!f)
+          break;
+
+        std::array<char, 512> buffer;
+        std::string result;
+        while (fgets(buffer.data(), buffer.size(), f) != nullptr)
+          result += buffer.data();
+
+        switch (const int ret = pclose(f)) {
+          case 0:
+            m_filenames.clear();
+            base::split_string(result, m_filenames, "\n");
+            if (m_filenames.empty())
+              return Result::Cancel;
+
+            m_filenames.pop_back(); // Superfluous \n
+
+            if (m_filenames.empty() || m_filenames.back().empty())
+              return Result::Cancel;
+
+            m_filename = m_filenames[0];
+            return Result::OK;
+          case 1:
+          case 256: return Result::Cancel;
+          default:  LOG(ERROR, "Error running kdialog command %d", ret); break;
+        }
         break;
+      }
 
       default: break;
     }
@@ -200,20 +269,32 @@ public:
     return Result::Error;
   }
 
-  static bool AreCLIToolsAvailable()
+  static bool checkAvailableBackend(const Spec::Backend backend)
   {
     if (s_cliTool == CLITool::Unknown) {
-      FILE* f = popen("zenity --version", "r");
-      if (f && pclose(f) == 0) {
+      const auto hasZenity = [] {
+        static bool check = std::system("zenity --version > /dev/null 2>&1") == 0;
+        return check;
+      };
+      const auto hasKdialog = [] {
+        static bool check = std::system("kdialog --version > /dev/null 2>&1") == 0;
+        return check;
+      };
+
+      if (backend == Spec::Backend::KDialog && hasKdialog()) {
+        s_cliTool = CLITool::KDialog;
+        return true;
+      }
+      if (backend == Spec::Backend::Zenity && hasZenity()) {
         s_cliTool = CLITool::Zenity;
+        return true;
       }
-      else {
-        f = popen("kdialog --version", "r");
-        if (f && pclose(f) == 0)
-          s_cliTool = CLITool::KDialog;
-        else
-          s_cliTool = CLITool::NotFound;
-      }
+
+      // Fallback & autodetect
+      if (hasKdialog())
+        s_cliTool = CLITool::KDialog;
+      else if (hasZenity())
+        s_cliTool = CLITool::Zenity;
     }
     return (s_cliTool > CLITool::NotFound);
   }
@@ -230,7 +311,7 @@ FileDialogX11::CLITool FileDialogX11::s_cliTool = FileDialogX11::CLITool::Unknow
 
 FileDialogRef FileDialog::makeX11(const Spec& spec)
 {
-  if (FileDialogX11::AreCLIToolsAvailable())
+  if (FileDialogX11::checkAvailableBackend(spec.backend))
     return base::make_ref<FileDialogX11>(spec);
   return nullptr;
 }
