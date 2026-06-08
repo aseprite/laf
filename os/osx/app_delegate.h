@@ -22,6 +22,20 @@
   // Files that were already processed in the CLI, so we don't need to
   // generate a DropFiles event.
   std::set<std::string> m_cliFiles;
+  // When a main window contains child windows, the standard macOS
+  // multiple-window behavior is insufficient to emulate the same
+  // behavior as Windows.
+  // On Windows, child windows preserve their z-order based on the
+  // last focused window, except for modal parent windows, which stay
+  // behind their children. Additionally, parent window positioning is
+  // independent from its child windows.
+  // The window z-order must also remain intact when the application is
+  // deactivated and activated again. However, macOS rearranges child
+  // windows on reactivation.
+  // Because of this, we maintain the following vector to store the
+  // window z-order whenever focus changes, allowing us to restore the
+  // same order when the application becomes active again.
+  NSArray<NSWindow*>* __strong m_savedWindowOrder;
   bool m_isHidden;
 }
 - (id)init;

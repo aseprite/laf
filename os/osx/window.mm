@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2019-2025  Igara Studio S.A.
+// Copyright (C) 2019-present  Igara Studio S.A.
 // Copyright (C) 2012-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -117,10 +117,6 @@
       [self center];
     }
 
-    if (spec->parent())
-      self.parentWindow =
-        (__bridge NSWindow*)static_cast<os::WindowOSX*>(spec->parent())->nativeHandle();
-
     [self makeKeyAndOrderFront:self];
 
     m_floating = spec->floating();
@@ -129,6 +125,17 @@
 
     if (spec->modal())
       self.level = NSModalPanelWindowLevel;
+
+    // If a window has a new child window (like a combo box list),
+    // it must be brought above its parent's z-order so it always
+    // appears on top, even when the parent is clicked/activated.
+    if (spec->parent()) {
+      NSWindow* parent =
+        (__bridge NSWindow*)static_cast<os::WindowOSX*>(spec->parent())->nativeHandle();
+      [self setParentWindow:parent];
+      if ([parent level] >= [self level])
+        [self setLevel:[parent level] + 1];
+    }
 
     // Hide the "View > Show Tab Bar" menu item
     if ([self respondsToSelector:@selector(setTabbingMode:)])
