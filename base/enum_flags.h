@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (C) 2024-2025  Igara Studio S.A.
+// Copyright (C) 2024-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -8,6 +8,7 @@
 #define BASE_ENUM_FLAGS_H_INCLUDED
 #pragma once
 
+#include <atomic>
 #include <type_traits>
 
 // When C++0x was being redacted, I was expecting that the final C++11
@@ -68,6 +69,24 @@
   }                                                                                                \
                                                                                                    \
   constexpr inline T& operator^=(T& a, const T b)                                                  \
+  {                                                                                                \
+    a = a ^ b;                                                                                     \
+    return a;                                                                                      \
+  }                                                                                                \
+                                                                                                   \
+  inline std::atomic<T>& operator|=(std::atomic<T>& a, const T b)                                  \
+  {                                                                                                \
+    a = a | b;                                                                                     \
+    return a;                                                                                      \
+  }                                                                                                \
+                                                                                                   \
+  inline std::atomic<T>& operator&=(std::atomic<T>& a, const T b)                                  \
+  {                                                                                                \
+    a = a & b;                                                                                     \
+    return a;                                                                                      \
+  }                                                                                                \
+                                                                                                   \
+  inline std::atomic<T>& operator^=(std::atomic<T>& a, const T b)                                  \
   {                                                                                                \
     a = a ^ b;                                                                                     \
     return a;                                                                                      \
