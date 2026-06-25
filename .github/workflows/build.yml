@@ -14,7 +14,7 @@ jobs:
           - build_type: RelWithDebInfo
             backend: none
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: 'recursive'
     - name: Install Dependencies
@@ -45,8 +45,10 @@ jobs:
         skia_file=$(basename $skia_url)
         curl --ssl-revoke-best-effort -L -o "$skia_file" "$skia_url"
         unzip "$skia_file" -d skia
-    - uses: ilammy/msvc-dev-cmd@v1
+    - uses: TheMrMilchmann/setup-msvc-dev@v4
       if: runner.os == 'Windows'
+      with:
+        arch: x64
     - uses: aseprite/get-ninja@main
     - name: Generating Makefiles
       shell: bash
