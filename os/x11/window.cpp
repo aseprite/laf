@@ -39,8 +39,7 @@
 #include <map>
 #include <set>
 
-#define KEY_TRACE(...)
-#define EVENT_TRACE(...)
+#define KEY_TRACE(...)               // TRACE(__VA_ARGS__)
 
 #define LAF_X11_DOUBLE_CLICK_TIMEOUT 250
 
@@ -1187,8 +1186,16 @@ void WindowX11::processX11Event(XEvent& event)
       Event ev;
       ev.setType(event.type == KeyPress ? Event::KeyDown : Event::KeyUp);
 
-      const KeySym keysym = XLookupKeysym(&event.xkey, 0);
-      ev.setScancode(x11_keysym_to_scancode(keysym));
+      // Get the first KeySym that can be converted to a well-known scancode for us.
+      KeyScancode scancode = kKeyNil;
+      KeySym keysym = NoSymbol;
+      for (int i = 0; i < 256; ++i) {
+        keysym = XLookupKeysym(&event.xkey, i);
+        scancode = x11_keysym_to_scancode(keysym);
+        if (scancode != kKeyNil || keysym == NoSymbol)
+          break;
+      }
+      ev.setScancode(scancode);
 
       if (m_xic) {
         std::vector<char> buf(16);
