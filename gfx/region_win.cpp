@@ -8,6 +8,8 @@
   #include "config.h"
 #endif
 
+#include <windows.h>
+
 #include "gfx/region.h"
 
 #include <cassert>
@@ -70,6 +72,24 @@ Region::const_iterator Region::end() const
 {
   fillData();
   return const_iterator(LPRECT(m_data->Buffer) + m_data->rdh.nCount);
+}
+
+bool Region::isEmpty() const
+{
+  RECT rc;
+  return GetRgnBox(m_hrgn, &rc) == NULLREGION;
+}
+
+bool Region::isRect() const
+{
+  RECT rc;
+  return GetRgnBox(m_hrgn, &rc) == SIMPLEREGION;
+}
+
+bool Region::isComplex() const
+{
+  RECT rc;
+  return GetRgnBox(m_hrgn, &rc) == COMPLEXREGION;
 }
 
 Rect Region::bounds() const
@@ -160,6 +180,21 @@ void Region::fillData() const
   m_data->rdh.dwSize = sizeof(RGNDATAHEADER);
   if (n > 0)
     GetRegionData(m_hrgn, n, m_data);
+}
+
+details::RegionIterator& details::RegionIterator::operator++()
+{
+  ++m_prect;
+  return *this;
+}
+
+details::RegionIterator::reference details::RegionIterator::operator*()
+{
+  m_rect.x = m_prect->left;
+  m_rect.y = m_prect->top;
+  m_rect.w = m_prect->right - m_prect->left;
+  m_rect.h = m_prect->bottom - m_prect->top;
+  return m_rect;
 }
 
 } // namespace gfx
