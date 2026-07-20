@@ -101,6 +101,8 @@
 
 - (void)applicationWillResignActive:(NSNotification*)notification
 {
+  m_savedWindowOrder = [NSApp orderedWindows];
+
   for (id window : [NSApp windows]) {
     if ([window isKindOfClass:[WindowOSXObjc class]] && [window isFloating]) {
       [window setLevel:NSNormalWindowLevel];
@@ -129,10 +131,20 @@
 
 - (void)applicationDidBecomeActive:(NSNotification*)notification
 {
-  for (id window : [NSApp windows]) {
-    if ([window isKindOfClass:[WindowOSXObjc class]] && [window isFloating]) {
-      [window setLevel:NSFloatingWindowLevel];
+  if (m_savedWindowOrder) {
+    for (id window in [m_savedWindowOrder reverseObjectEnumerator]) {
+      if ([window isKindOfClass:[WindowOSXObjc class]] && [window isVisible]) {
+        // Restore window floating levels
+        if ([window isFloating])
+          [window setLevel:NSFloatingWindowLevel];
+        // Force the children windows z-order to locate above their parent.
+        NSWindow* parent = [window parentWindow];
+        if (parent && [window level] <= [parent level])
+          [window setLevel:[parent level] + 1];
+        [window orderFront:nil];
+      }
     }
+    m_savedWindowOrder = nil;
   }
 
   NSEvent* event = [NSApp currentEvent];

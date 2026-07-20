@@ -1203,6 +1203,14 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
     case WM_EXITSIZEMOVE:
       checkColorSpaceChange();
       onEndResizing();
+
+      // WM_EXITSIZEMOVE is received only if the user moves the mouse
+      // after a WM_NCLBUTTONDOWN. If the user doesn't move the mouse
+      // and release the button, we'll receive a WM_NCMOUSEMOVE or
+      // WM_MOUSEMOVE later (so we have to handle several
+      // releaseNcClick() cases).
+      if (m_ncClicked)
+        releaseNcClick();
       break;
 
     case WM_SETTINGCHANGE:
@@ -1212,6 +1220,9 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
       // Mouse and Trackpad Messages
 
     case WM_MOUSEMOVE: {
+      if (m_ncClicked)
+        releaseNcClick();
+
       Event ev;
       mouseEvent(wparam, lparam, ev);
 
@@ -1248,6 +1259,8 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
 
     case WM_NCLBUTTONDOWN:
       if (m_borderless) {
+        m_ncClicked = true;
+
         // With custom frames, simulate that we always clicked the
         // client area. So in this way Windows doesn't paint the
         // default Minimize/Maximize/Close buttons.
@@ -1261,6 +1274,9 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
 
     case WM_NCMOUSEMOVE:
     case WM_MOUSELEAVE:
+      if (m_ncClicked)
+        releaseNcClick();
+
       // For regular windows (with the default system frame), we
       // generate the MouseLeave message when the mouse leaves the
       // client area.
@@ -2424,6 +2440,26 @@ void WindowWin::killTouchTimer()
     m_touch->timerID = 0;
     TOUCH_TRACE(" - Kill timer\n");
   }
+}
+
+// Useful to simulate a left-click MouseUp event after the user
+// moved/resized the window from the non-client area.
+void WindowWin::releaseNcClick()
+{
+  ASSERT(m_ncClicked);
+  m_ncClicked = false;
+
+  // Create a pseudo-MouseUp event as WM_NCLBUTTONUP is never
+  // received. It's only for the LeftButton as it's only an issue when
+  // a borderless window is dragged/resized from its custom hit areas
+  // (os::Hit::TitleBar, etc.) with the left mouse button.
+  Event ev;
+  ev.setType(Event::MouseUp);
+  ev.setButton(Event::LeftButton);
+  if (auto* sys = system())
+    ev.setPosition(pointFromScreen(sys->mousePosition()));
+
+  queueEvent(ev);
 }
 
 void WindowWin::checkColorSpaceChange()

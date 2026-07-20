@@ -1,5 +1,5 @@
 // laf-dlgs
-// Copyright (C) 2025  Igara Studio S.A.
+// Copyright (C) 2025-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -21,7 +21,6 @@
 #include <shobjidl.h>
 #include <windows.h>
 
-#include <atomic>
 #include <string>
 #include <thread>
 #include <vector>
@@ -51,7 +50,7 @@ static std::string quote_arg(const std::string& in)
 // executable. If the file dialog process crashes we don't kill the
 // main executable.
 class FileDialogWinSafe : public FileDialog {
-  static constexpr const int kBufSize = MAX_PATH;
+  static constexpr const int kBufSize = 4096;
 
 public:
   FileDialogWinSafe(const Spec& spec) : m_spec(spec) {}
@@ -170,14 +169,12 @@ public:
       // Start a thread to read the output of the process. Its output
       // include the last visited path and then the selected
       // filename(s).
-      m_closingRead = false;
       std::thread readThread([this, childRead] { onReadChildDataThread(childRead); });
 
       // Wait the laf-dlgs-proc to finish (or crash)
       onWaitChildProcess((HWND)parent, pi.hProcess);
 
       // Wait the reader thread to finish.
-      m_closingRead = true;
       readThread.join();
 
       // Did the process crash?
@@ -228,7 +225,7 @@ public:
     // If there is a main window, we have to create a message pump to
     // avoid locking the main window.
     MSG msg;
-    while (!m_closingRead) {
+    while (true) {
       const DWORD res = MsgWaitForMultipleObjects(1,
                                                   &childProcess,
                                                   FALSE,
@@ -255,15 +252,12 @@ public:
     bool startOver = true;
     std::string line;
 
-    while (!m_closingRead) {
-      buf[0] = 0;
-
+    while (true) {
       DWORD read = 0;
-      BOOL result = ReadFile(childRead, buf.data(), buf.size(), &read, nullptr);
+      const BOOL result = ReadFile(childRead, buf.data(), buf.size(), &read, nullptr);
       if (!result || read == 0)
         break;
 
-      line.clear();
       for (int i = 0; i < read; ++i) {
         if (startOver) {
           startOver = false;
@@ -294,7 +288,6 @@ public:
   base::paths m_filenames;
   std::string m_initialDir;
   std::string m_lastPath;
-  std::atomic<bool> m_closingRead = false;
 
   // True if the laf-dlgs-proc.exe signled the "OK" line.
   bool m_okReceived = false;

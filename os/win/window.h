@@ -93,6 +93,7 @@ private:
   void sendDelayedTouchEvents();
   void clearDelayedTouchEvents();
   void killTouchTimer();
+  void releaseNcClick();
   void checkColorSpaceChange();
   void checkDarkModeChange();
 
@@ -268,6 +269,11 @@ private:
   // calling DestroyWindow() we can enable this flag to ensure that no
   // more events (and no more WindowRef) are enqueued.
   bool m_destroying = false;
+
+  // True when the window was clicked from non-client area to be
+  // moved/resized. Used only for borderless windows that can be
+  // dragged from custom hit areas.
+  bool m_ncClicked = false;
 };
 
 } // namespace os
