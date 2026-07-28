@@ -44,6 +44,7 @@ public:
   int width() const override;
   int height() const override;
   const ColorSpaceRef& colorSpace() const override;
+  void setColorSpace(const ColorSpaceRef& cs) override;
   bool isDirectToScreen() const override;
   void setImmutable() override;
   int getSaveCount() const override;
@@ -121,6 +122,8 @@ public:
   static SurfaceRef loadSurface(const char* filename);
 
 private:
+  void recreateCanvasForBitmap();
+
   void skDrawSurface(const Surface* src,
                      const gfx::Clip& clip,
                      const SkSamplingOptions& sampling,

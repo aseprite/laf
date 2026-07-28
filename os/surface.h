@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2025  Igara Studio S.A.
+// Copyright (C) 2018-present  Igara Studio S.A.
 // Copyright (C) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -47,6 +47,7 @@ public:
   virtual int height() const = 0;
   gfx::Rect bounds() const { return gfx::Rect(0, 0, width(), height()); }
   virtual const ColorSpaceRef& colorSpace() const = 0;
+  virtual void setColorSpace(const ColorSpaceRef& cs) = 0;
   virtual bool isDirectToScreen() const = 0;
 
   // Call if you are not going to modify the pixels of this surface

@@ -174,6 +174,16 @@ const ColorSpaceRef& SkiaSurface::colorSpace() const
   return m_colorSpace;
 }
 
+void SkiaSurface::setColorSpace(const ColorSpaceRef& cs)
+{
+  m_colorSpace = cs;
+
+  if (!m_bitmap.isNull()) {
+    m_bitmap.setColorSpace(skColorSpace());
+    recreateCanvasForBitmap();
+  }
+}
+
 bool SkiaSurface::isDirectToScreen() const
 {
   return false;
@@ -739,6 +749,11 @@ void SkiaSurface::swapBitmap(SkBitmap& other)
   ASSERT(!m_surface);
   m_bitmap.swap(other);
 
+  recreateCanvasForBitmap();
+}
+
+void SkiaSurface::recreateCanvasForBitmap()
+{
   m_canvasPtr.reset();
   m_canvasPtr =
     SkCanvas::MakeRasterDirect(m_bitmap.info(), m_bitmap.getPixels(), m_bitmap.rowBytes());
