@@ -1,5 +1,5 @@
 // LAF Base Library
-// Copyright (c) 2019-2022 Igara Studio S.A.
+// Copyright (c) 2019-present Igara Studio S.A.
 // Copyright (c) 2001-2016 David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -79,6 +79,25 @@ public:
       T value(std::move(*it));
       m_queue.erase(it);
       m_queue.push_front(std::move(value));
+    }
+  }
+
+  template<typename UnaryPredicate>
+  void erase_if(UnaryPredicate p)
+  {
+    const std::lock_guard lock(m_mutex);
+
+    if (m_queue.empty())
+      return;
+
+    for (auto it = m_queue.begin(), end = m_queue.end(); it != end;) {
+      if (p(*it)) {
+        it = m_queue.erase(it);
+        end = m_queue.end();
+      }
+      else {
+        ++it;
+      }
     }
   }
 
