@@ -1,5 +1,5 @@
 // LAF Gfx Library
-// Copyright (C) 2020-2025  Igara Studio S.A.
+// Copyright (C) 2020-present  Igara Studio S.A.
 // Copyright (C) 2001-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -24,19 +24,20 @@ class SizeT {
 public:
   T w, h;
 
-  SizeT() : w(0), h(0) {}
+  constexpr SizeT() : w(0), h(0) {}
 
-  SizeT(const T& w, const T& h) : w(w), h(h) {}
+  constexpr SizeT(const T& w, const T& h) : w(w), h(h) {}
 
-  SizeT(const SizeT& size) : w(size.w), h(size.h) {}
+  constexpr SizeT(const SizeT& size) : w(size.w), h(size.h) {}
 
   template<typename U>
-  explicit SizeT(const SizeT<U>& size) : w(static_cast<T>(size.w))
-                                       , h(static_cast<T>(size.h))
+  constexpr explicit SizeT(const SizeT<U>& size)
+    : w(static_cast<T>(size.w))
+    , h(static_cast<T>(size.h))
   {
   }
 
-  explicit SizeT(const PointT<T>& point) : w(point.x), h(point.y) {}
+  constexpr explicit SizeT(const PointT<T>& point) : w(point.x), h(point.y) {}
 
   [[nodiscard]]
   SizeT createUnion(const SizeT& sz) const

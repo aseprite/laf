@@ -1,5 +1,5 @@
 // LAF Gfx Library
-// Copyright (C) 2020-2025  Igara Studio S.A.
+// Copyright (C) 2020-present  Igara Studio S.A.
 // Copyright (C) 2001-2016  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -20,21 +20,22 @@ class PointT {
 public:
   T x, y;
 
-  PointT() : x(0), y(0) {}
+  constexpr PointT() : x(0), y(0) {}
 
-  PointT(const T& x, const T& y) : x(x), y(y) {}
+  constexpr PointT(const T& x, const T& y) : x(x), y(y) {}
 
-  PointT(const PointT& point) : x(point.x), y(point.y) {}
+  constexpr PointT(const PointT& point) : x(point.x), y(point.y) {}
 
   template<typename U>
-  explicit PointT(const PointT<U>& point) : x(static_cast<T>(point.x))
-                                          , y(static_cast<T>(point.y))
+  constexpr explicit PointT(const PointT<U>& point)
+    : x(static_cast<T>(point.x))
+    , y(static_cast<T>(point.y))
   {
   }
 
   template<typename U>
-  explicit PointT(const SizeT<U>& size) : x(size.w)
-                                        , y(size.h)
+  constexpr explicit PointT(const SizeT<U>& size) : x(size.w)
+                                                  , y(size.h)
   {
   }
 

@@ -30,18 +30,18 @@ public:
   T y2() const { return y + h; }
 
   // Creates a new empty rectangle with the origin in 0,0.
-  RectT() : x(0), y(0), w(0), h(0) {}
+  constexpr RectT() : x(0), y(0), w(0), h(0) {}
 
   // Creates a new rectangle with the specified size with the origin in 0,0.
-  RectT(const T& w, const T& h) : x(0), y(0), w(w), h(h) {}
+  constexpr RectT(const T& w, const T& h) : x(0), y(0), w(w), h(h) {}
 
   // Creates a new rectangle with the specified size with the origin in 0,0.
-  explicit RectT(const SizeT<T>& size) : x(0), y(0), w(size.w), h(size.h) {}
+  constexpr explicit RectT(const SizeT<T>& size) : x(0), y(0), w(size.w), h(size.h) {}
 
-  RectT(const RectT<T>& rect) : x(rect.x), y(rect.y), w(rect.w), h(rect.h) {}
+  constexpr RectT(const RectT<T>& rect) : x(rect.x), y(rect.y), w(rect.w), h(rect.h) {}
 
   template<typename U>
-  RectT(const RectT<U>& rect)
+  constexpr RectT(const RectT<U>& rect)
     : x(static_cast<T>(rect.x))
     , y(static_cast<T>(rect.y))
     , w(static_cast<T>(rect.w))
@@ -49,7 +49,11 @@ public:
   {
   }
 
-  RectT(const PointT<T>& point, const SizeT<T>& size) : x(point.x), y(point.y), w(size.w), h(size.h)
+  constexpr RectT(const PointT<T>& point, const SizeT<T>& size)
+    : x(point.x)
+    , y(point.y)
+    , w(size.w)
+    , h(size.h)
   {
   }
 
@@ -66,7 +70,7 @@ public:
   //
   // See that point2 isn't included in the rectangle, it's like the
   // point returned by point2() member function.
-  RectT(const PointT<T>& point1, const PointT<T>& point2)
+  constexpr RectT(const PointT<T>& point1, const PointT<T>& point2)
   {
     PointT<T> leftTop = point1;
     PointT<T> rightBottom = point2;
@@ -90,7 +94,7 @@ public:
     this->h = rightBottom.y - leftTop.y;
   }
 
-  RectT(const T& x, const T& y, const T& w, const T& h) : x(x), y(y), w(w), h(h) {}
+  constexpr RectT(const T& x, const T& y, const T& w, const T& h) : x(x), y(y), w(w), h(h) {}
 
   // Verifies if the width and/or height of the rectangle are less or
   // equal than zero.
