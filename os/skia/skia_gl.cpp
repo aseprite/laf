@@ -78,13 +78,10 @@ bool SkiaGL::createRenderTarget(const gfx::Size& size,
   GrGLFramebufferInfo info;
   info.fFBOID = (GrGLuint)buffer;
   info.fFormat = GR_GL_RGBA8;
-  // SK_API bool GrBackendRenderTargets::GetGLFramebufferInfo(const GrBackendRenderTarget&,
-  // GrGLFramebufferInfo*);
 
   GrGLint stencil = 0;
   m_glInterfaces->fFunctions.fGetIntegerv(GR_GL_STENCIL_BITS, &stencil);
 
-  // GrBackendRenderTarget target(size.w, size.h, 0, stencil, info);
   GrBackendRenderTarget target = GrBackendRenderTargets::MakeGL(size.w, size.h, 0, stencil, info);
 
   m_surface.reset(nullptr);
