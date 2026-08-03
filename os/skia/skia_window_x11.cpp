@@ -58,8 +58,10 @@ SkiaWindowX11::SkiaWindowX11(const WindowSpec& spec) : Base(X11::instance()->dis
 void SkiaWindowX11::onPaint(const gfx::Rect& rc)
 {
 #if SK_SUPPORT_GPU
-  if (backend() == Backend::GL)
+  if (backend() == Backend::GL) {
+    m_gl.glInterfaces()->fFunctions.fFlush();
     return;
+  }
 #endif
 
   auto surface = static_cast<SkiaSurface*>(this->surface());
