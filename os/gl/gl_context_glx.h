@@ -53,6 +53,7 @@ public:
                  &border_width,
                  &depth);
     glViewport(0, 0, w, h);
+    glDrawBuffer(GL_BACK);
 
     return true;
   }
