@@ -851,9 +851,9 @@ const SkImage* SkiaSurface::getOrCreateTextureImage() const
   if (m_cachedGen && m_cachedGen != m_bitmap.getGenerationID())
     m_image.reset();
 
-  if (m_image && m_image->isValid((SkRecorder*)win->sk_grCtx()))
+  if (m_image && m_image->isTextureBacked())
     return m_image.get();
-  if (uploadBitmapAsTexture() && m_image && m_image->isValid((SkRecorder*)win->sk_grCtx()))
+  if (uploadBitmapAsTexture() && m_image && m_image->isTextureBacked())
     return m_image.get();
   return nullptr;
 }
