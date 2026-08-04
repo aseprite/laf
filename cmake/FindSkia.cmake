@@ -28,13 +28,6 @@ endif()
 
 # Skia library
 find_library(SKIA_LIBRARY skia PATH "${SKIA_LIBRARY_DIR}")
-if(WIN32)
-  find_library(SKIA_OPENGL_LIBRARY opengl32)
-elseif(APPLE)
-  find_library(SKIA_OPENGL_LIBRARY OpenGL NAMES GL)
-else()
-  find_library(SKIA_OPENGL_LIBRARY opengl NAMES GL)
-endif()
 
 # Skia modules
 find_library(SKUNICODE_CORE_LIBRARY skunicode_core PATH "${SKIA_LIBRARY_DIR}")

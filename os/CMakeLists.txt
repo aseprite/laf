@@ -15,6 +15,8 @@ set(LAF_OS_SOURCES
   none/system.cpp
   window.cpp)
 if(WIN32)
+  find_library(OPENGL_LIBRARY opengl32)
+
   list(APPEND LAF_OS_SOURCES
     win/color_space.cpp
     win/dnd.cpp
@@ -34,6 +36,8 @@ if(WIN32)
 elseif(APPLE)
   find_library(COCOA_LIBRARY Cocoa)
   find_library(CARBON_LIBRARY Carbon)
+  find_library(OPENGL_LIBRARY OpenGL NAMES GL)
+
   if(COCOA_LIBRARY)
     list(APPEND LAF_OS_SOURCES
       osx/app.mm
@@ -50,6 +54,8 @@ elseif(APPLE)
       gl/gl_context_nsgl.mm)
   endif()
 else()
+  find_library(OPENGL_LIBRARY opengl NAMES GL)
+
   list(APPEND LAF_OS_SOURCES
     x11/dnd.cpp
     x11/event_queue.cpp
@@ -97,7 +103,7 @@ if(LAF_WITH_CLIP)
     LAF_WITH_CLIP)
 endif()
 
-set(LAF_OS_PLATFORM_LIBS)
+set(LAF_OS_PLATFORM_LIBS ${OPENGL_LIBRARY})
 if(WIN32)
   list(APPEND LAF_OS_PLATFORM_LIBS
     kernel32 user32 gdi32 comdlg32 ole32 winmm
