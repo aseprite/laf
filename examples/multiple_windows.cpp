@@ -1,5 +1,5 @@
 // LAF Library
-// Copyright (c) 2019-2025  Igara Studio S.A.
+// Copyright (c) 2019-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -8,6 +8,8 @@
 #include "gfx/rgb.h"
 #include "os/os.h"
 #include "text/text.h"
+
+#include "examples/toggle_gpu.h"
 
 #include <algorithm>
 #include <cstdarg>
@@ -36,6 +38,8 @@ const char* lines[] = { "A: Switch mouse cursor to Arrow <-> Move",
 
 static void redraw_window(Window* window, const FontRef& font)
 {
+  window->makeCurrent();
+
   Surface* s = window->surface();
   Paint paint;
   paint.color(gfx::rgba(0, 0, 0));
@@ -109,6 +113,7 @@ int app_main(int argc, char* argv[])
   system->handleWindowMoving = [&font](Window* w) {
     redraw_window(w, font);
     w->invalidate();
+    w->swapBuffers();
   };
 
   // Create four windows for each screen with the bounds of the
@@ -151,6 +156,9 @@ int app_main(int argc, char* argv[])
   Event ev;
   while (!windows.empty()) {
     queue->getEvent(ev);
+
+    if (handle_toggle_gpu_key(ev))
+      continue;
 
     switch (ev.type()) {
       case Event::CloseApp:

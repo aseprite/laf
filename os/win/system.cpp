@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2020-2025  Igara Studio S.A.
+// Copyright (C) 2020-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -12,6 +12,7 @@
 #include "os/win/system.h"
 
 #include "gfx/color.h"
+#include "os/gl/gl_context_wgl.h"
 #include "os/win/screen.h"
 
 #include <limits>
@@ -316,6 +317,11 @@ void SystemWin::_setInternalMousePosition(const Event& ev)
     return;
   }
   m_screenMousePos = ev.window()->pointToScreen(ev.position());
+}
+
+std::unique_ptr<GpuContext> SystemWin::makePlatformGpuContext()
+{
+  return std::make_unique<GLContextWGL>();
 }
 
 SystemRef System::makeWin()

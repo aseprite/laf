@@ -1,5 +1,5 @@
 // LAF Library
-// Copyright (c) 2024-2025  Igara Studio S.A.
+// Copyright (c) 2024-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -7,6 +7,8 @@
 #include "base/paths.h"
 #include "os/os.h"
 #include "text/text.h"
+
+#include "examples/toggle_gpu.h"
 
 #include <cstdio>
 #include <string>
@@ -172,8 +174,10 @@ static void redraw_window(os::Window* window)
                   &paint,
                   text::TextAlign::Center);
 
-  if (window->isVisible())
+  if (window->isVisible()) {
     window->invalidateRegion(gfx::Region(rc));
+    window->swapBuffers();
+  }
   else
     window->setVisible(true);
 }
@@ -220,6 +224,11 @@ int app_main(int argc, char* argv[])
   os::Event ev;
   while (running) {
     queue->getEvent(ev);
+
+    if (handle_toggle_gpu_key(ev)) {
+      redraw_window(ev.window().get());
+      continue;
+    }
 
     switch (ev.type()) {
       case os::Event::KeyDown:

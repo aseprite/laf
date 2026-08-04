@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2021-2023  Igara Studio S.A.
+// Copyright (C) 2021-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -10,6 +10,7 @@
 
 #include "os/x11/system.h"
 
+#include "os/gl/gl_context_glx.h"
 #include "os/x11/cursor.h"
 
 #include <X11/Xcursor/Xcursor.h>
@@ -150,6 +151,11 @@ CursorRef SystemX11::makeCursor(const Surface* surface, const gfx::Point& focus,
   }
 
   return make_ref<CursorX11>(xcursor);
+}
+
+std::unique_ptr<GpuContext> SystemX11::makePlatformGpuContext()
+{
+  return std::make_unique<GLContextGLX>(X11::instance()->display());
 }
 
 SystemRef System::makeX11()

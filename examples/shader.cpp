@@ -1,5 +1,5 @@
 // LAF Library
-// Copyright (C) 2022-2024  Igara Studio S.A.
+// Copyright (C) 2022-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -16,6 +16,8 @@
 
 #include "base/time.h"
 #include "os/skia/skia_surface.h"
+
+#include "examples/toggle_gpu.h"
 
 #include "include/core/SkCanvas.h"
 #include "include/effects/SkRuntimeEffect.h"
@@ -58,7 +60,7 @@ public:
   {
     m_window = m_system->makeWindow(256, 256);
     m_window->setCursor(NativeCursor::Arrow);
-    m_window->setTitle("Shader - GPU");
+    m_window->setTitle(std::string("Shader") + kGpuSuffix);
     m_window->setGpuAcceleration(true);
     repaint();
     m_window->setVisible(true);
@@ -66,6 +68,9 @@ public:
 
   bool processEvent(const Event& ev)
   {
+    if (handle_toggle_gpu_key(ev))
+      return true;
+
     switch (ev.type()) {
       case Event::CloseWindow:  return false;
 
@@ -74,10 +79,6 @@ public:
       case Event::KeyDown:
         if (ev.scancode() == kKeyEsc)
           return false;
-        else if (ev.scancode() == os::kKeyG) {
-          m_window->setGpuAcceleration(!m_window->gpuAcceleration());
-          m_window->setTitle(m_window->gpuAcceleration() ? "Shader - GPU" : "Shader");
-        }
         break;
 
       default:
@@ -90,8 +91,6 @@ public:
   void repaint()
   {
     Surface* surface = m_window->surface();
-    SurfaceLock lock(surface);
-
     SkCanvas* canvas = &static_cast<SkiaSurface*>(surface)->canvas();
     skiaPaint(canvas);
 

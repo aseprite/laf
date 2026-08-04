@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2018-2025  Igara Studio S.A.
+// Copyright (c) 2018-present  Igara Studio S.A.
 // Copyright (c) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -24,13 +24,10 @@
 #pragma push_macro("None")
 #undef None // Undefine the X11 None macro
 
-#if LAF_SKIA && SK_SUPPORT_GPU
-class GrDirectContext;
-#endif
-
 namespace os {
 
 class Event;
+class GpuContext;
 class Surface;
 class Window;
 using WindowRef = Ref<Window>;
@@ -72,6 +69,9 @@ public:
   typedef void* NativeHandle;
 
   virtual ~Window() {}
+
+  // Size of the client area in real/screen pixels (frame().size()).
+  virtual gfx::Size clientSize() const = 0;
 
   // Real rectangle of this window (including title bar, etc.) in
   // the screen. (The scale is not involved.)
@@ -121,6 +121,7 @@ public:
   // GPU-related functions
   virtual bool gpuAcceleration() const = 0;
   virtual void setGpuAcceleration(bool state) {}
+  virtual void makeCurrent() = 0;
   virtual void swapBuffers() = 0;
 
   // Focus the window to receive the keyboard input by default.
@@ -210,16 +211,14 @@ public:
     m_userData = reinterpret_cast<void*>(data);
   }
 
-#if LAF_SKIA && SK_SUPPORT_GPU
-  virtual GrDirectContext* sk_grCtx() const = 0;
-#endif
-
   void notifyDragEnter(os::DragEvent& ev);
   void notifyDrag(os::DragEvent& ev);
   void notifyDragLeave(os::DragEvent& ev);
   void notifyDrop(os::DragEvent& ev);
 
   void notifyMoving();
+
+  virtual GpuContext* gpuContext() { return nullptr; }
 
 protected:
   // Should be called when the user is moving the window (dragging the

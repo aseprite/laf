@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2022  Igara Studio S.A.
+// Copyright (C) 2022-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -9,6 +9,8 @@
 #endif
 
 #include "os/gl/gl_context_nsgl.h"
+
+#include "os/window.h"
 
 #include <vector>
 
@@ -23,7 +25,7 @@ GLContextNSGL::GLContextNSGL()
 
 GLContextNSGL::~GLContextNSGL()
 {
-  destroyGLContext();
+  destroyContext();
 }
 
 void GLContextNSGL::setView(id view)
@@ -40,7 +42,7 @@ bool GLContextNSGL::isValid()
   return m_nsgl != nil;
 }
 
-bool GLContextNSGL::createGLContext()
+bool GLContextNSGL::makeContext(Window* window, GpuContext* shared)
 {
   // set up pixel format
   std::vector<NSOpenGLPixelFormatAttribute> attr;
@@ -66,6 +68,8 @@ bool GLContextNSGL::createGLContext()
   if (!nsPixelFormat)
     return false;
 
+  // TODO NSOpenGLContext shared
+
   m_nsgl = [[NSOpenGLContext alloc] initWithFormat:nsPixelFormat shareContext:nil];
   if (!m_nsgl)
     return false;
@@ -76,23 +80,32 @@ bool GLContextNSGL::createGLContext()
   if (m_view)
     [m_nsgl setView:m_view];
 
+  makeCurrent(window);
   return true;
 }
 
-void GLContextNSGL::destroyGLContext()
+void GLContextNSGL::destroyContext()
 {
   m_nsgl = nil;
 }
 
-void GLContextNSGL::makeCurrent()
+void GLContextNSGL::makeCurrent(Window* window)
 {
   [m_nsgl makeCurrentContext];
+
+  const gfx::Size clientSize = window->clientSize();
+
+  if (m_lastClientSize != clientSize) {
+    m_lastClientSize = clientSize;
+    [m_nsgl update];
+  }
+
+  glViewport(0, 0, clientSize.w, clientSize.h);
 }
 
-void GLContextNSGL::swapBuffers()
+void GLContextNSGL::swapBuffers(Window* window)
 {
   [m_nsgl flushBuffer];
-  [m_nsgl update];
 }
 
 } // namespace os

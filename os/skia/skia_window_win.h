@@ -15,7 +15,6 @@
 
 #if SK_SUPPORT_GPU
   #include "include/gpu/ganesh/gl/GrGLInterface.h"
-  #include "os/gl/gl_context.h"
 #endif
 
 namespace os {

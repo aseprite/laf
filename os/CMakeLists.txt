@@ -1,5 +1,5 @@
 # LAF OS
-# Copyright (C) 2018-2025  Igara Studio S.A.
+# Copyright (C) 2018-present  Igara Studio S.A.
 # Copyright (C) 2012-2018  David Capello
 
 ######################################################################
@@ -71,7 +71,7 @@ if(LAF_BACKEND STREQUAL "skia")
   endif()
   list(APPEND LAF_OS_SOURCES
     skia/skia_color_space.cpp
-    skia/skia_gl.cpp
+    skia/skia_gpu_context.cpp
     skia/skia_surface.cpp
     skia/skia_system.cpp
     skia/skia_window.cpp)

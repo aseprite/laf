@@ -1,5 +1,5 @@
 // LAF Library
-// Copyright (c) 2024-2025  Igara Studio S.A.
+// Copyright (c) 2024-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -8,6 +8,8 @@
 #include "base/time.h"
 #include "os/os.h"
 #include "text/text.h"
+
+#include "examples/toggle_gpu.h"
 
 #include "os/skia/skia_helpers.h"
 #include "os/skia/skia_surface.h"
@@ -86,7 +88,6 @@ void draw_window(System* system,
                  TextEdit& edit)
 {
   Surface* surface = window->surface();
-  SurfaceLock lock(surface);
   const gfx::Rect rc = surface->bounds();
 
   Paint p;
@@ -156,8 +157,10 @@ void draw_window(System* system,
   }
 
   // Invalidates the whole window to show it on the screen.
-  if (window->isVisible())
+  if (window->isVisible()) {
     window->invalidateRegion(gfx::Region(rc));
+    window->swapBuffers();
+  }
   else
     window->setVisible(true);
 }
@@ -216,6 +219,11 @@ int app_main(int argc, char* argv[])
       edit.caretTick += 500;
       edit.caretVisible = !edit.caretVisible;
       redraw = true;
+    }
+
+    if (handle_toggle_gpu_key(ev)) {
+      redraw = true;
+      continue;
     }
 
     switch (ev.type()) {

@@ -14,7 +14,6 @@
 #include "os/common/system.h"
 #include "os/skia/skia_color_space.h"
 #include "os/skia/skia_surface.h"
-#include "os/skia/skia_window.h"
 #include "os/surface_format.h"
 #include "os/window_spec.h"
 
@@ -31,69 +30,27 @@
   #define SkiaSystemBase SystemX11
 #endif
 
-#include "include/core/SkGraphics.h"
-
 #include <algorithm>
 #include <memory>
 
 namespace os {
 
+class SkiaWindow;
+
 class SkiaSystem final : public SkiaSystemBase {
 public:
-  SkiaSystem() : m_defaultWindow(nullptr) { SkGraphics::Init(); }
+  SkiaSystem();
+  ~SkiaSystem();
 
-  ~SkiaSystem() { destroyInstance(); }
+  Capabilities capabilities() const override;
 
-  Capabilities capabilities() const override
-  {
-    return Capabilities(int(Capabilities::MultipleWindows) | int(Capabilities::CanResizeWindow) |
-                        int(Capabilities::WindowScale) | int(Capabilities::CustomMouseCursor) |
-                        int(Capabilities::ColorSpaces)
-#ifndef __APPLE__
-                        | int(Capabilities::CanStartWindowResize)
-#endif
-#if SK_SUPPORT_GPU
-                        | int(Capabilities::GpuAccelerationSwitch)
-#endif
-    );
-  }
+  void setTabletOptions(const TabletOptions& options) override;
 
-  void setTabletOptions(const TabletOptions& options) override
-  {
-    SkiaSystemBase::setTabletOptions(options);
-#if LAF_WINDOWS
-    if (SkiaWindow* window = dynamic_cast<SkiaWindow*>(defaultWindow())) {
-      // TODO notify all windows
-      window->onTabletOptionsChange();
-    }
-#endif
-  }
+  Window* defaultWindow() override;
 
-  Window* defaultWindow() override { return m_defaultWindow; }
-
-  WindowRef makeWindow(const WindowSpec& spec) override
-  {
-    auto window = make_ref<SkiaWindow>(spec);
-    if (!m_defaultWindow)
-      m_defaultWindow = window.get();
-    if (window && m_windowCS)
-      window->setColorSpace(m_windowCS);
-    return window;
-  }
-
-  SurfaceRef makeSurface(int width, int height, const os::ColorSpaceRef& colorSpace) override
-  {
-    auto sur = make_ref<SkiaSurface>();
-    sur->create(width, height, colorSpace);
-    return sur;
-  }
-
-  SurfaceRef makeRgbaSurface(int width, int height, const os::ColorSpaceRef& colorSpace) override
-  {
-    auto sur = make_ref<SkiaSurface>();
-    sur->createRgba(width, height, colorSpace);
-    return sur;
-  }
+  WindowRef makeWindow(const WindowSpec& spec) override;
+  SurfaceRef makeSurface(int width, int height, const os::ColorSpaceRef& colorSpace) override;
+  SurfaceRef makeRgbaSurface(int width, int height, const os::ColorSpaceRef& colorSpace) override;
 
   SurfaceRef loadSurface(const char* filename) override
   {
@@ -102,11 +59,7 @@ public:
 
   SurfaceRef loadRgbaSurface(const char* filename) override { return loadSurface(filename); }
 
-  void setTextInput(bool state, const gfx::Point& screenCaretPos = {}) override
-  {
-    if (m_defaultWindow)
-      m_defaultWindow->setTextInput(state, screenCaretPos);
-  }
+  void setTextInput(bool state, const gfx::Point& screenCaretPos = {}) override;
 
   void listColorSpaces(std::vector<os::ColorSpaceRef>& list) override
   {
@@ -129,21 +82,12 @@ public:
     return os::make_ref<SkiaColorSpaceConversion>(src, dst);
   }
 
-  void setWindowsColorSpace(const os::ColorSpaceRef& cs) override
-  {
-    m_windowCS = cs;
-
-    if (m_defaultWindow)
-      m_defaultWindow->setColorSpace(m_windowCS);
-
-    // TODO change the color space of all windows
-  }
+  void setWindowsColorSpace(const os::ColorSpaceRef& cs) override;
 
   os::ColorSpaceRef windowsColorSpace() override { return m_windowCS; }
 
 private:
-  SkiaWindow* m_defaultWindow;
-  bool m_gpuAcceleration = false;
+  SkiaWindow* m_defaultWindow = nullptr;
   ColorSpaceRef m_windowCS;
 };
 

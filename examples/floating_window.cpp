@@ -1,11 +1,13 @@
 // LAF Library
-// Copyright (c) 2021-2024  Igara Studio S.A.
+// Copyright (c) 2021-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
 
 #include "os/os.h"
 #include "text/text.h"
+
+#include "examples/toggle_gpu.h"
 
 using namespace os;
 using namespace text;
@@ -45,19 +47,29 @@ public:
 
   void redraw()
   {
+    m_nativeWindow->makeCurrent();
+
     auto rc = m_nativeWindow->surface()->bounds();
     onRedraw(m_nativeWindow->surface(), rc);
 
-    if (m_nativeWindow->isVisible())
+    if (m_nativeWindow->isVisible()) {
       m_nativeWindow->invalidateRegion(gfx::Region(rc));
-    else
+      m_nativeWindow->swapBuffers();
+    }
+    else {
       m_nativeWindow->setVisible(true);
+    }
   }
 
   virtual bool isFloating() const { return false; }
 
   virtual bool handleEvent(os::Event& ev)
   {
+    if (handle_toggle_gpu_key(ev)) {
+      redraw();
+      return true;
+    }
+
     switch (ev.type()) {
       case os::Event::CloseWindow:  return false;
 

@@ -160,6 +160,8 @@ public:
   SurfaceLock(Surface* surface) : m_surface(surface) { m_surface->lock(); }
   ~SurfaceLock() { m_surface->unlock(); }
 
+  operator bool() { return true; }
+
 private:
   Surface* m_surface;
 };

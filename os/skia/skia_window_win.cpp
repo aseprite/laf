@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2019-2025  Igara Studio S.A.
+// Copyright (C) 2019-present  Igara Studio S.A.
 // Copyright (C) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -18,10 +18,6 @@
 #include "os/skia/skia_window.h"
 #include "os/system.h"
 
-#if SK_SUPPORT_GPU
-  #include "os/gl/gl_context_wgl.h"
-#endif
-
 #include "os/win/window_dde.h"
 #include <windows.h>
 
@@ -32,9 +28,6 @@ namespace os {
 
 SkiaWindowWin::SkiaWindowWin(const WindowSpec& spec) : SkiaWindowBase<WindowWin>(spec)
 {
-#if SK_SUPPORT_GPU
-  m_glCtx = std::make_unique<GLContextWGL>((HWND)nativeHandle());
-#endif
   initColorSpace();
 }
 
@@ -44,7 +37,13 @@ void SkiaWindowWin::onPaint(HDC hdc)
     case Backend::NONE: paintHDC(hdc); break;
 
 #if SK_SUPPORT_GPU
-    case Backend::GL: m_gl.glInterfaces()->fFunctions.fFlush(); break;
+    case Backend::GL: {
+      auto* gpuCtx = gpuContext();
+      if (gpuCtx && gpuCtx->isValid())
+        gpuCtx->makeCurrent(this);
+      // gpuCtx->flush();
+      break;
+    }
 #endif
   }
 }

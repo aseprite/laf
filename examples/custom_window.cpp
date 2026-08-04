@@ -1,11 +1,13 @@
 // LAF Library
-// Copyright (c) 2021-2024  Igara Studio S.A.
+// Copyright (c) 2021-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
 
 #include "os/os.h"
 #include "text/text.h"
+
+#include "examples/toggle_gpu.h"
 
 using namespace os;
 using namespace text;
@@ -107,8 +109,8 @@ void draw_button(Surface* surface, int x, Hit button, const Hit hit)
 void draw_window(Window* window, const FontRef& font, const Hit hit)
 {
   Surface* surface = window->surface();
-  SurfaceLock lock(surface);
-  gfx::Rect rc = surface->bounds();
+  const gfx::Rect rc = surface->bounds();
+
   gfx::Rect rc2 = rc;
   Paint p;
   p.style(Paint::Fill);
@@ -154,8 +156,10 @@ void draw_window(Window* window, const FontRef& font, const Hit hit)
     draw_text(surface, font, "(F key or F11 to exit full screen)", pos, &p, TextAlign::Center);
   }
 
-  if (window->isVisible())
+  if (window->isVisible()) {
     window->invalidateRegion(gfx::Region(rc));
+    window->swapBuffers();
+  }
   else
     window->setVisible(true);
 }
@@ -252,6 +256,11 @@ int app_main(int argc, char* argv[])
 
     Event ev;
     queue->getEvent(ev);
+
+    if (handle_toggle_gpu_key(ev)) {
+      redraw = true;
+      continue;
+    }
 
     switch (ev.type()) {
       case Event::CloseApp:

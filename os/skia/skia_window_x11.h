@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2021-2022  Igara Studio S.A.
+// Copyright (C) 2021-present  Igara Studio S.A.
 // Copyright (C) 2016-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -11,7 +11,6 @@
 
 #include "base/disable_copying.h"
 #include "gfx/size.h"
-#include "os/gl/gl_context_glx.h"
 #include "os/native_cursor.h"
 #include "os/skia/skia_window_base.h"
 #include "os/x11/window.h"

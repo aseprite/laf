@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2022  Igara Studio S.A.
+// Copyright (C) 2022-present  Igara Studio S.A.
 // Copyright (C) 2015-2016  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -9,25 +9,26 @@
 #define OS_GL_CONTEXT_WGL_INCLUDED
 #pragma once
 
-#include "os/gl/gl_context.h"
+#include "os/gpu_context.h"
 
 #include <windows.h>
 
+#include <gl/gl.h>
+
 namespace os {
 
-class GLContextWGL : public GLContext {
+class GLContextWGL : public GpuContext {
 public:
-  GLContextWGL(HWND hwnd) : m_hwnd(hwnd), m_glrc(nullptr) {}
+  GLContextWGL() : m_glrc(nullptr) {}
 
-  ~GLContextWGL() { destroyGLContext(); }
+  ~GLContextWGL() { destroyContext(); }
 
   bool isValid() override { return m_glrc != nullptr; }
 
-  bool createGLContext() override
+  bool makeContext(Window* window, GpuContext* shared) override
   {
-    HDC olddc = wglGetCurrentDC();
-    HGLRC oldglrc = wglGetCurrentContext();
-    HDC hdc = GetDC(m_hwnd);
+    HWND hwnd = (HWND)window->nativeHandle();
+    HDC hdc = GetDC(hwnd);
 
     PIXELFORMATDESCRIPTOR pfd = {
       sizeof(PIXELFORMATDESCRIPTOR),
@@ -64,15 +65,21 @@ public:
 
     m_glrc = wglCreateContext(hdc);
     if (!m_glrc) {
-      ReleaseDC(m_hwnd, hdc);
+      ReleaseDC(hwnd, hdc);
       return false;
     }
 
-    ReleaseDC(m_hwnd, hdc);
+    if (shared) {
+      auto sharedGlrc = (HGLRC)shared->nativeHandle();
+      wglShareLists(sharedGlrc, m_glrc);
+    }
+
+    wglMakeCurrent(hdc, m_glrc);
+    ReleaseDC(hwnd, hdc);
     return true;
   }
 
-  void destroyGLContext() override
+  void destroyContext() override
   {
     if (m_glrc) {
       wglMakeCurrent(nullptr, nullptr);
@@ -81,22 +88,27 @@ public:
     }
   }
 
-  void makeCurrent() override
+  void makeCurrent(Window* window) override
   {
-    HDC hdc = GetDC(m_hwnd);
+    HWND hwnd = (HWND)window->nativeHandle();
+    HDC hdc = GetDC(hwnd);
     wglMakeCurrent(hdc, m_glrc);
-    ReleaseDC(m_hwnd, hdc);
+
+    const gfx::Size clientSize = window->clientSize();
+    glViewport(0, 0, clientSize.w, clientSize.h);
+
+    ReleaseDC(hwnd, hdc);
   }
 
-  void swapBuffers() override
+  void swapBuffers(Window* window) override
   {
-    HDC hdc = GetDC(m_hwnd);
+    HWND hwnd = (HWND)window->nativeHandle();
+    HDC hdc = GetDC(hwnd);
     SwapBuffers(hdc);
-    ReleaseDC(m_hwnd, hdc);
+    ReleaseDC(hwnd, hdc);
   }
 
 private:
-  HWND m_hwnd;
   HGLRC m_glrc;
 };
 

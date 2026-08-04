@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2020-2025  Igara Studio S.A.
+// Copyright (C) 2020-present  Igara Studio S.A.
 // Copyright (C) 2016  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -77,6 +77,8 @@ public:
 
   ScreenRef primaryScreen() override;
   void listScreens(ScreenList& list) override;
+
+  std::unique_ptr<GpuContext> makePlatformGpuContext() override;
 
 private:
   MenusRef m_menus;

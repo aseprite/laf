@@ -50,7 +50,7 @@ public:
   bool isTransparent() const override;
   bool isFullscreen() const override;
   void setFullscreen(bool state) override;
-  gfx::Size clientSize() const;
+  gfx::Size clientSize() const override;
   gfx::Rect frame() const override;
   void setFrame(const gfx::Rect& bounds) override;
   gfx::Rect contentRect() const override;

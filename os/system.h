@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2025  Igara Studio S.A.
+// Copyright (C) 2018-present  Igara Studio S.A.
 // Copyright (C) 2012-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -13,6 +13,7 @@
 #include "os/app_mode.h"
 #include "os/capabilities.h"
 #include "os/color_space.h"
+#include "os/gpu_context.h"
 #include "os/keys.h"
 #include "os/ref.h"
 #include "os/screen.h"
@@ -247,6 +248,17 @@ public:
   // vendor (company name, etc.)
   virtual void setWintabDelegate(void* delegate) {}
 #endif
+
+  // Internal function to create a plataform-specific OpenGL
+  // context. You shouldn't use this function directly.
+  virtual std::unique_ptr<GpuContext> makePlatformGpuContext() { return nullptr; }
+
+  // Returns default GpuContext to be shared between all windows.
+  GpuContext* gpuContext() const { return m_gpuContext; }
+  void setGpuContext(GpuContext* newCtx) { m_gpuContext = newCtx; }
+
+private:
+  GpuContext* m_gpuContext = nullptr;
 };
 
 [[deprecated]]

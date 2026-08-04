@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (c) 2020-2025  Igara Studio S.A.
+// Copyright (c) 2020-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -10,6 +10,7 @@
 
 #include "os/osx/system.h"
 
+#include "os/gl/gl_context_nsgl.h"
 #include "os/osx/screen.h"
 
 namespace os {
@@ -155,6 +156,11 @@ void SystemOSX::listScreens(ScreenList& list)
   auto screens = [NSScreen screens];
   for (NSScreen* screen : screens)
     list.push_back(make_ref<ScreenOSX>(screen));
+}
+
+std::unique_ptr<GpuContext> SystemOSX::makePlatformGpuContext()
+{
+  return std::make_unique<GLContextNSGL>();
 }
 
 SystemRef System::makeOSX()

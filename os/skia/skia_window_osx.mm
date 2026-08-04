@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2025  Igara Studio S.A.
+// Copyright (C) 2018-present  Igara Studio S.A.
 // Copyright (C) 2012-2018  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -40,18 +40,9 @@ namespace os {
 
 SkiaWindowOSX::SkiaWindowOSX(const WindowSpec& spec)
 {
-#if SK_SUPPORT_GPU
-  m_glCtx = std::make_unique<GLContextNSGL>();
-#endif
-
   m_closing = false;
   createWindow(spec);
   initColorSpace();
-
-#if SK_SUPPORT_GPU
-  auto nsgl = (GLContextNSGL*)m_glCtx.get();
-  nsgl->setView([m_nsWindow contentView]);
-#endif
 }
 
 SkiaWindowOSX::~SkiaWindowOSX()
@@ -99,12 +90,6 @@ void SkiaWindowOSX::invalidateRegion(const gfx::Region& rgn)
 #endif
       }
       break;
-
-#if SK_SUPPORT_GPU
-
-    case Backend::GL: m_gl.glInterfaces()->fFunctions.fFlush(); break;
-
-#endif
   }
 }
 
@@ -136,7 +121,13 @@ void SkiaWindowOSX::onDrawRect(const gfx::Rect& rect)
     case Backend::NONE: paintGC(rect); break;
 
 #if SK_SUPPORT_GPU
-    case Backend::GL: m_gl.glInterfaces()->fFunctions.fFlush(); break;
+
+    case Backend::GL: {
+      auto gpuCtx = System::instance()->gpuContext();
+      if (gpuCtx && gpuCtx->isValid())
+        gpuCtx->makeCurrent(this);
+      break;
+    }
 #endif
   }
 }
@@ -144,9 +135,10 @@ void SkiaWindowOSX::onDrawRect(const gfx::Rect& rect)
 void SkiaWindowOSX::onWindowChanged()
 {
 #if SK_SUPPORT_GPU
-  if (m_glCtx) {
-    auto nsgl = (GLContextNSGL*)m_glCtx.get();
-    nsgl->setView([m_nsWindow contentView]);
+  if (auto* gpuCtx = gpuContext()) {
+    auto nsgl = (GLContextNSGL*)gpuCtx->nativeHandle();
+    if (nsgl)
+      nsgl->setView([m_nsWindow contentView]);
   }
 #endif
 }

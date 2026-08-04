@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2022  Igara Studio S.A.
+// Copyright (C) 2018-present  Igara Studio S.A.
 // Copyright (C) 2012-2016  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -14,7 +14,6 @@
 #include "os/native_cursor.h"
 #include "os/osx/window.h"
 #include "os/screen.h"
-#include "os/skia/skia_gl.h"
 #include "os/skia/skia_window_base.h"
 
 #include <string>

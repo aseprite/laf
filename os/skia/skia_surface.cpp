@@ -14,7 +14,9 @@
 #include "base/file_handle.h"
 #include "gfx/path.h"
 #include "gfx/region.h"
+#include "os/skia/skia_gpu_context.h"
 #include "os/skia/skia_helpers.h"
+#include "os/skia/skia_system.h"
 #include "os/surface_format.h"
 #include "os/system.h"
 
@@ -34,8 +36,8 @@
   #include "include/gpu/ganesh/GrDirectContext.h"
   #include "include/gpu/ganesh/SkImageGanesh.h"
   #include "include/gpu/ganesh/gl/GrGLBackendSurface.h"
-  #include "src/image/SkSurface_Raster.h"
 #endif
+#include "src/image/SkSurface_Raster.h"
 
 #include <memory>
 #include <stddef.h>
@@ -89,7 +91,6 @@ SkiaSurface::SkiaSurface(const sk_sp<SkSurface>& surface) : m_surface(surface)
 
 SkiaSurface::~SkiaSurface()
 {
-  ASSERT(m_lock == 0);
   destroy();
 }
 
@@ -266,19 +267,12 @@ gfx::Matrix SkiaSurface::matrix() const
 
 void SkiaSurface::lock()
 {
-  ASSERT(m_lock >= 0);
-  if (m_lock++ == 0) {
-    // TODO add mutex!
-    // m_bitmap is always locked
-  }
+  // Do nothing
 }
 
 void SkiaSurface::unlock()
 {
-  ASSERT(m_lock > 0);
-  if (--m_lock == 0) {
-    // m_bitmap is always locked
-  }
+  // Do nothing
 }
 
 SurfaceRef SkiaSurface::applyScale(float scaleFactor, const Sampling& sampling)
@@ -842,9 +836,12 @@ void SkiaSurface::skDrawSurface(const SkiaSurface* src,
 
 const SkImage* SkiaSurface::getOrCreateTextureImage() const
 {
-  // TODO use the GrDirectContext of the specific os::Window
-  auto win = System::instance()->defaultWindow();
-  if (!win || !win->sk_grCtx())
+  auto* gpuCtx = static_cast<SkiaSystem*>(System::instance().get())->gpuContext();
+  if (!gpuCtx)
+    return nullptr;
+
+  auto* grCtx = static_cast<SkiaGpuContext*>(gpuCtx)->grCtx();
+  if (!grCtx)
     return nullptr;
 
   // Invalidate the cached texture if the bitmap pixels were modified.
@@ -863,14 +860,19 @@ bool SkiaSurface::uploadBitmapAsTexture() const
   SkImageInfo ii = m_bitmap.info();
   sk_sp<SkImage> image = m_bitmap.asImage();
 
-  // TODO use the window of this surface
-  Window* win = System::instance()->defaultWindow();
+  auto* gpuCtx = static_cast<SkiaSystem*>(System::instance().get())->gpuContext();
+  if (!gpuCtx)
+    return false;
+
+  auto* grCtx = static_cast<SkiaGpuContext*>(gpuCtx)->grCtx();
+  if (!grCtx)
+    return false;
 
   GrBackendTexture texture;
   SkImages::BackendTextureReleaseProc proc;
-  SkImages::GetBackendTextureFromImage(win->sk_grCtx(), image, &texture, &proc);
+  SkImages::GetBackendTextureFromImage(grCtx, image, &texture, &proc);
 
-  m_image = SkImages::BorrowTextureFrom(win->sk_grCtx(),
+  m_image = SkImages::BorrowTextureFrom(grCtx,
                                         texture,
                                         kTopLeft_GrSurfaceOrigin,
                                         ii.colorType(),

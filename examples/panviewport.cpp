@@ -1,5 +1,5 @@
 // LAF Library
-// Copyright (C) 2020-2024  Igara Studio S.A.
+// Copyright (C) 2020-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -8,6 +8,8 @@
 #include "gfx/rgb.h"
 #include "os/os.h"
 #include "text/text.h"
+
+#include "examples/toggle_gpu.h"
 
 #include <algorithm>
 #include <cstdarg>
@@ -35,6 +37,9 @@ public:
 
   bool processEvent(const os::Event& ev)
   {
+    if (handle_toggle_gpu_key(ev))
+      return true;
+
     switch (ev.type()) {
       case os::Event::CloseWindow:  return false;
 
@@ -95,15 +100,13 @@ public:
         break;
 
       case os::Event::KeyDown:
-        if (ev.scancode() == os::kKeyEsc)
-          return false;
-        // Toggle full-screen
-        else if ( // F11 for Windows/Linux
-          (ev.scancode() == os::kKeyF11) ||
-          // Ctrl+Command+F for macOS
-          (ev.scancode() == os::kKeyF &&
-           ev.modifiers() == (os::kKeyCmdModifier | os::kKeyCtrlModifier))) {
-          m_window->setFullscreen(!m_window->isFullscreen());
+        switch (ev.scancode()) {
+          case os::kKeyEsc:
+            return false;
+
+            // Toggle full-screen
+          case os::kKeyF:
+          case os::kKeyF11: m_window->setFullscreen(!m_window->isFullscreen()); break;
         }
         break;
 
@@ -117,7 +120,6 @@ public:
   void repaint()
   {
     os::Surface* surface = m_window->surface();
-    os::SurfaceLock lock(surface);
     const gfx::Rect rc(surface->bounds());
 
     os::Paint p;

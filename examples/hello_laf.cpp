@@ -1,17 +1,18 @@
 // LAF Library
-// Copyright (c) 2019-2025  Igara Studio S.A.
+// Copyright (c) 2019-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
 
 #include "os/os.h"
 
+#include "examples/toggle_gpu.h"
+
 using namespace os;
 
 void draw_window(Window* window)
 {
   Surface* surface = window->surface();
-  SurfaceLock lock(surface);
   const gfx::Rect rc = surface->bounds();
 
   Paint p;
@@ -80,6 +81,11 @@ int app_main(int argc, char* argv[])
     Event ev;
     queue->getEvent(ev);
 
+    if (handle_toggle_gpu_key(ev)) {
+      redraw = true;
+      continue;
+    }
+
     switch (ev.type()) {
       case Event::CloseApp:
       case Event::CloseWindow: running = false; break;
@@ -87,11 +93,6 @@ int app_main(int argc, char* argv[])
       case Event::KeyDown:
         switch (ev.scancode()) {
           case kKeyEsc: running = false; break;
-
-          case os::kKeyG:
-            window->setGpuAcceleration(!window->gpuAcceleration());
-            redraw = true;
-            break;
 
           case kKey1:
           case kKey2:

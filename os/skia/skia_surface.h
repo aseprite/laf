@@ -22,8 +22,6 @@
 #include "include/core/SkPaint.h"
 #include "include/core/SkSurface.h"
 
-#include <atomic>
-
 namespace os {
 
 class SkiaSurface final : public Surface {
@@ -116,6 +114,7 @@ public:
     return m_bitmap;
   }
   SkCanvas& canvas() { return *m_canvas; }
+  sk_sp<SkSurface>& skSurface() { return m_surface; }
 
   void swapBitmap(SkBitmap& other);
 
@@ -167,7 +166,6 @@ private:
   std::unique_ptr<SkCanvas> m_canvasPtr;
   SkCanvas* m_canvas = nullptr;
   SkPaint m_paint;
-  std::atomic<int> m_lock = 0;
 };
 
 } // namespace os

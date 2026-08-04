@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2021-2025  Igara Studio S.A.
+// Copyright (C) 2021-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -10,23 +10,13 @@
 
 #include "os/event.h"
 #include "os/event_queue.h"
-#include "os/gl/gl_context.h"
-#include "os/skia/skia_gl.h"
+#include "os/skia/skia_gpu_context.h"
 #include "os/skia/skia_surface.h"
+#include "os/skia/skia_system.h"
 #include "os/system.h"
 #include "os/window.h"
 
 #include "include/core/SkCanvas.h"
-
-#if SK_SUPPORT_GPU
-  #if LAF_WINDOWS
-    #include <windows.h>
-
-    #include <GL/gl.h>
-  #elif LAF_MACOS
-    #include <OpenGL/gl.h>
-  #endif
-#endif
 
 namespace os {
 
@@ -47,7 +37,7 @@ public:
   ~SkiaWindowBase()
   {
 #if SK_SUPPORT_GPU
-    detachGpuContext();
+    destroyGpuContext();
 #endif
   }
 
@@ -87,35 +77,44 @@ public:
     m_surface.reset();
 
 #if SK_SUPPORT_GPU
-    // Detach and re-create OpenGL context
-    detachGpuContext();
-
     // GPU-accelerated surface
-    if (m_glCtx && m_preferGpuAcceleration) {
-      m_glCtx->createGLContext();
+    if (m_preferGpuAcceleration) {
+      auto* gpuCtx = gpuContext();
+      if (gpuCtx) {
+        if (!gpuCtx->isValid()) {
+          auto sys = System::instance();
+          GpuContext* shared = (sys ? sys->gpuContext() : nullptr);
 
-      if (m_glCtx->isValid()) {
-        m_glCtx->makeCurrent();
+          gpuCtx->makeContext(this, shared);
+  #if 0 // TODO set shared GpuContext
+          if (sys && !shared && gpuCtx->isValid())
+            sys->setGpuContext(gpuCtx);
+  #endif
+        }
 
-        if (m_gl.attachGL() &&
-            m_gl.createRenderTarget(size,
-                                    this->scale(),
-                                    ((SkiaColorSpace*)colorSpace().get())->skColorSpace())) {
-          m_surface = make_ref<SkiaSurface>(m_gl.surface());
-          m_backend = Backend::GL;
+        if (gpuCtx->isValid()) {
+          gpuCtx->makeCurrent(this);
+
+          m_renderTarget = gpuCtx->makeRenderTarget(size, this->scale(), colorSpace());
+          if (m_renderTarget.surface) {
+            m_surface = m_renderTarget.surface;
+            m_backend = Backend::GL;
+          }
         }
       }
+    }
+    else {
+      m_renderTarget = {};
     }
 #endif // SK_SUPPORT_GPU
 
     // Raster surface
     if (!m_surface) {
       m_surface = make_ref<SkiaSurface>();
-
       if (T::isTransparent())
-        m_surface->createRgba(newSize.w, newSize.h, colorSpace());
+        static_cast<SkiaSurface*>(m_surface.get())->createRgba(newSize.w, newSize.h, colorSpace());
       else
-        m_surface->create(newSize.w, newSize.h, colorSpace());
+        static_cast<SkiaSurface*>(m_surface.get())->create(newSize.w, newSize.h, colorSpace());
     }
   }
 
@@ -149,40 +148,57 @@ public:
     os::queue_event(ev);
   }
 
+  void makeCurrent() override
+  {
+#if SK_SUPPORT_GPU
+    if (m_backend == Backend::NONE)
+      return;
+
+    auto* gpuCtx = gpuContext();
+    if (gpuCtx && gpuCtx->isValid())
+      gpuCtx->makeCurrent(this);
+#endif
+  }
+
   void swapBuffers() override
   {
 #if SK_SUPPORT_GPU
-    if (m_backend == Backend::NONE || !m_gl.backbufferSurface() || !m_glCtx ||
-        !m_glCtx->isValid()) {
+    if (m_backend == Backend::NONE || !m_renderTarget.fbSurface)
       return;
-    }
+
+    auto* gpuCtx = gpuContext();
+    if (!gpuCtx || !gpuCtx->isValid())
+      return;
 
     auto surface = static_cast<SkiaSurface*>(this->surface());
     if (!surface)
       return;
 
-    // Draw the small (unscaled) surface to the backbuffer surface
+    // Draw the small (unscaled) surface to the framebuffer surface
     // scaling it to the this->scale() factor.
-    if (m_gl.backbufferSurface() != m_gl.surface()) {
+    if (m_renderTarget.fbSurface != m_renderTarget.surface) {
       SkSamplingOptions sampling;
       SkPaint paint;
 
-      SkCanvas* dstCanvas = m_gl.backbufferSurface()->getCanvas();
+      SkCanvas* dstCanvas =
+        static_cast<SkiaSurface*>(m_renderTarget.fbSurface.get())->skSurface()->getCanvas();
       dstCanvas->save();
       dstCanvas->scale(SkScalar(this->scale()), SkScalar(this->scale()));
-      m_gl.surface()->draw(dstCanvas, 0.0, 0.0, sampling, &paint);
+      static_cast<SkiaSurface*>(m_renderTarget.surface.get())
+        ->skSurface()
+        ->draw(dstCanvas, 0.0, 0.0, sampling, &paint);
       dstCanvas->restore();
     }
 
-    m_gl.grCtx()->flushAndSubmit();
-    m_glCtx->swapBuffers();
+    gpuCtx->flush();
+    gpuCtx->swapBuffers(this);
 #endif // SK_SUPPORT_GPU
   }
 
   bool gpuAcceleration() const override
   {
 #if SK_SUPPORT_GPU
-    return (m_backend == Backend::GL);
+    return (m_backend == Backend::GL && m_gpuCtx && m_gpuCtx->isValid());
 #else
     return false;
 #endif
@@ -190,15 +206,18 @@ public:
 
   void setGpuAcceleration(bool state) override
   {
+#if SK_SUPPORT_GPU
+    if (state) {
+      if (!gpuContext())
+        makeGpuContext();
+    }
+#endif
+
     m_preferGpuAcceleration = state;
     resetSkiaSurface();
 
     T::setGpuAcceleration(state);
   }
-
-#if SK_SUPPORT_GPU
-  GrDirectContext* sk_grCtx() const override { return m_gl.grCtx(); }
-#endif
 
 protected:
   void initializeSurface()
@@ -236,17 +255,27 @@ protected:
   Backend backend() const { return m_backend; }
 
 #if SK_SUPPORT_GPU
-  std::unique_ptr<GLContext> m_glCtx;
-  SkiaGL m_gl;
+  SkiaGpuContext* gpuContext() override { return m_gpuCtx.get(); }
 #endif
 
 private:
 #if SK_SUPPORT_GPU
-  void detachGpuContext()
+  void makeGpuContext()
   {
-    m_gl.detachGL();
-    if (m_glCtx && m_glCtx->isValid())
-      m_glCtx->destroyGLContext();
+    if (!m_gpuCtx)
+      m_gpuCtx = std::make_unique<SkiaGpuContext>(System::instance()->makePlatformGpuContext());
+  }
+
+  void destroyGpuContext()
+  {
+    if (m_gpuCtx && m_gpuCtx->isValid()) {
+      auto* sys = System::rawInstance();
+      if (sys && sys->gpuContext() == m_gpuCtx.get())
+        sys->setGpuContext(nullptr);
+
+      m_gpuCtx->destroyContext();
+      m_gpuCtx.reset();
+    }
   }
 #endif
 
@@ -256,8 +285,12 @@ private:
   // SkiaWindow::resize() call when the window is created (as the
   // window is created, it send a first resize event.)
   bool m_initialized;
-  Ref<SkiaSurface> m_surface;
+  RenderTarget m_renderTarget;
+  SurfaceRef m_surface;
   os::ColorSpaceRef m_colorSpace;
+#if SK_SUPPORT_GPU
+  std::unique_ptr<SkiaGpuContext> m_gpuCtx;
+#endif
 };
 
 } // namespace os

@@ -1,5 +1,5 @@
 // LAF Library
-// Copyright (c) 2019-2025  Igara Studio S.A.
+// Copyright (c) 2019-present  Igara Studio S.A.
 //
 // This file is released under the terms of the MIT license.
 // Read LICENSE.txt for more information.
@@ -66,7 +66,6 @@ void draw_window(Window* window,
                  const gfx::Point& mousePos)
 {
   Surface* surface = window->surface();
-  SurfaceLock lock(surface);
   const gfx::Rect rc = surface->bounds();
 
   Paint p;

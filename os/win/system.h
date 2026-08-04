@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2020-2025  Igara Studio S.A.
+// Copyright (C) 2020-present  Igara Studio S.A.
 // Copyright (C) 2012-2017  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -51,6 +51,8 @@ public:
   void _clearInternalMousePosition();
   void _setInternalMousePosition(const gfx::Point& pos);
   void _setInternalMousePosition(const Event& ev);
+
+  std::unique_ptr<GpuContext> makePlatformGpuContext() override;
 
 private:
   TabletOptions m_tabletOptions;

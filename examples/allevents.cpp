@@ -9,6 +9,8 @@
 #include "os/os.h"
 #include "text/text.h"
 
+#include "examples/toggle_gpu.h"
+
 #include <algorithm>
 #include <cstdarg>
 #include <cstdlib>
@@ -39,6 +41,9 @@ public:
 
   bool processEvent(const Event& ev)
   {
+    if (handle_toggle_gpu_key(ev))
+      return true;
+
     switch (ev.type()) {
       case Event::CloseApp:
       case Event::CloseWindow: return false;

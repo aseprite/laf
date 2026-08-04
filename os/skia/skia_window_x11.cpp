@@ -16,6 +16,7 @@
 #include "os/event_queue.h"
 #include "os/gl/gl_context_glx.h"
 #include "os/skia/skia_surface.h"
+#include "os/skia/skia_system.h"
 #include "os/skia/skia_window.h"
 #include "os/system.h"
 #include "os/x11/x11.h"
@@ -49,9 +50,6 @@ bool convert_skia_bitmap_to_ximage(const SkBitmap& bitmap, XImage& image)
 
 SkiaWindowX11::SkiaWindowX11(const WindowSpec& spec) : Base(X11::instance()->display(), spec)
 {
-#if SK_SUPPORT_GPU
-  m_glCtx = std::make_unique<GLContextGLX>(x11display(), x11window());
-#endif
   initColorSpace();
 }
 
@@ -59,7 +57,9 @@ void SkiaWindowX11::onPaint(const gfx::Rect& rc)
 {
 #if SK_SUPPORT_GPU
   if (backend() == Backend::GL) {
-    m_gl.glInterfaces()->fFunctions.fFlush();
+    auto gpuCtx = System::instance()->gpuContext();
+    if (gpuCtx && gpuCtx->isValid())
+      gpuCtx->makeCurrent(this);
     return;
   }
 #endif
