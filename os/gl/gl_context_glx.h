@@ -35,6 +35,7 @@ public:
       return false;
 
     m_glCtx = glXCreateContext(m_display, vi, sharedGpuContext, GL_TRUE);
+    XFree(vi);
     if (!m_glCtx)
       return false;
 
