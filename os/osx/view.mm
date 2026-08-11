@@ -178,6 +178,9 @@ using namespace os;
 - (void)removeImpl
 {
   @autoreleasepool {
+    // This is "hack" because AppKit doesn't dealloc the NSWindow's.
+    // TODO the final solution should be to dealloc each NSWindow.
+    self.layer.contents = nil;
     // Reconfigure the view to release the CALayer object. This along
     // with the autoreleasepool in initWithFrame: are needed.
     self.layer.drawsAsynchronously = false;
