@@ -17,16 +17,6 @@ namespace os {
 
 class Window;
 
-// "surface" is where we draw the content scaled (e.g. smaller than
-// the final result). The "fbSurface" points to the framebuffer where
-// we draw (e.g. GL_BACK) which is unscaled/real pixels. Before a
-// SwapBuffers we copy the "surface" into "fbSurface", but only if
-// scale != 1, if scale = 1 both surfaces match.
-struct RenderTarget {
-  os::SurfaceRef fbSurface; // Framebuffer surface (real pixels / unscaled)
-  os::SurfaceRef surface;   // Scaled surface to paint
-};
-
 class GpuContext {
 public:
   virtual ~GpuContext() {}
@@ -39,9 +29,13 @@ public:
   virtual void makeCurrent(Window* window) {}
   virtual void swapBuffers(Window* window) {}
   virtual void flush() {}
-  virtual RenderTarget makeRenderTarget(const gfx::Size& size,
-                                        const int scale,
-                                        const os::ColorSpaceRef& cs)
+
+  virtual SurfaceRef makeOnscreenRenderTarget(const gfx::Size& size, const os::ColorSpaceRef& cs)
+  {
+    return {};
+  }
+
+  virtual SurfaceRef makeOffscreenRenderTarget(const gfx::Size& size, const os::ColorSpaceRef& cs)
   {
     return {};
   }

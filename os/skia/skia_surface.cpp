@@ -142,20 +142,6 @@ void SkiaSurface::destroy()
   m_canvas = nullptr;
 }
 
-void SkiaSurface::flush() const
-{
-  // TODO replace with GrDirectContext::flush()
-  // if (m_canvas)
-  //   m_canvas->flush();
-}
-
-void SkiaSurface::flushAndSubmit() const
-{
-  // TODO replace with GrDirectContext::flushAndSubmit()
-  // if (m_surface)
-  //   m_surface->flushAndSubmit();
-}
-
 int SkiaSurface::width() const
 {
   if (m_surface)
@@ -817,7 +803,16 @@ void SkiaSurface::skDrawSurface(const SkiaSurface* src,
                                 const SkCanvas::SrcRectConstraint constraint)
 {
 #if SK_SUPPORT_GPU
-  src->flush();
+  if (srcRect.width() == dstRect.width() && srcRect.height() == dstRect.height()) {
+    if (auto srcSkSurface = const_cast<SkiaSurface*>(src)->skSurface();
+        srcSkSurface && srcSkSurface->recordingContext()) {
+      SkSamplingOptions sampling;
+      SkPaint paint;
+      srcSkSurface->draw(m_canvas, dstRect.x(), dstRect.y(), sampling, &paint);
+      return;
+    }
+  }
+
   if (auto srcImage = src->getOrCreateTextureImage()) {
     m_canvas->drawImageRect(srcImage, srcRect, dstRect, sampling, &paint, constraint);
     return;
@@ -836,27 +831,25 @@ void SkiaSurface::skDrawSurface(const SkiaSurface* src,
 
 const SkImage* SkiaSurface::getOrCreateTextureImage() const
 {
-  auto* gpuCtx = static_cast<SkiaSystem*>(System::instance().get())->gpuContext();
-  if (!gpuCtx)
-    return nullptr;
-
-  auto* grCtx = static_cast<SkiaGpuContext*>(gpuCtx)->grCtx();
-  if (!grCtx)
-    return nullptr;
-
   // Invalidate the cached texture if the bitmap pixels were modified.
   if (m_cachedGen && m_cachedGen != m_bitmap.getGenerationID())
     m_image.reset();
 
   if (m_image && m_image->isTextureBacked())
     return m_image.get();
+
   if (uploadBitmapAsTexture() && m_image && m_image->isTextureBacked())
     return m_image.get();
+
   return nullptr;
 }
 
 bool SkiaSurface::uploadBitmapAsTexture() const
 {
+  // Don't upload mutable bitmaps as texture.
+  if (!m_bitmap.isImmutable())
+    return false;
+
   SkImageInfo ii = m_bitmap.info();
   sk_sp<SkImage> image = m_bitmap.asImage();
 
@@ -870,14 +863,15 @@ bool SkiaSurface::uploadBitmapAsTexture() const
 
   GrBackendTexture texture;
   SkImages::BackendTextureReleaseProc proc;
-  SkImages::GetBackendTextureFromImage(grCtx, image, &texture, &proc);
+  if (!SkImages::MakeBackendTextureFromImage(grCtx, image, &texture, &proc))
+    return false;
 
   m_image = SkImages::BorrowTextureFrom(grCtx,
                                         texture,
                                         kTopLeft_GrSurfaceOrigin,
                                         ii.colorType(),
                                         ii.alphaType(),
-                                        nullptr);
+                                        skColorSpace());
 
   if (m_image)
     m_cachedGen = m_bitmap.getGenerationID();

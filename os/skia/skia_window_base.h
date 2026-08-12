@@ -86,25 +86,33 @@ public:
           GpuContext* shared = (sys ? sys->gpuContext() : nullptr);
 
           gpuCtx->makeContext(this, shared);
-  #if 0 // TODO set shared GpuContext
+
+          // Set shared GpuContext
           if (sys && !shared && gpuCtx->isValid())
             sys->setGpuContext(gpuCtx);
-  #endif
         }
 
         if (gpuCtx->isValid()) {
           gpuCtx->makeCurrent(this);
 
-          m_renderTarget = gpuCtx->makeRenderTarget(size, this->scale(), colorSpace());
-          if (m_renderTarget.surface) {
-            m_surface = m_renderTarget.surface;
+          m_onscreen = gpuCtx->makeOnscreenRenderTarget(size, colorSpace());
+          if (this->scale() == 1) {
+            m_surface = m_onscreen;
+          }
+          else {
+            m_surface = gpuCtx->makeOffscreenRenderTarget(newSize, colorSpace());
+          }
+          if (m_onscreen && m_surface)
             m_backend = Backend::GL;
+          else {
+            m_onscreen.reset();
+            m_surface.reset();
           }
         }
       }
     }
-    else {
-      m_renderTarget = {};
+    else if (m_onscreen) {
+      m_onscreen.reset();
     }
 #endif // SK_SUPPORT_GPU
 
@@ -163,7 +171,7 @@ public:
   void swapBuffers() override
   {
 #if SK_SUPPORT_GPU
-    if (m_backend == Backend::NONE || !m_renderTarget.fbSurface)
+    if (m_backend == Backend::NONE || !m_onscreen)
       return;
 
     auto* gpuCtx = gpuContext();
@@ -176,15 +184,14 @@ public:
 
     // Draw the small (unscaled) surface to the framebuffer surface
     // scaling it to the this->scale() factor.
-    if (m_renderTarget.fbSurface != m_renderTarget.surface) {
+    if (m_onscreen != m_surface) {
       SkSamplingOptions sampling;
       SkPaint paint;
 
-      SkCanvas* dstCanvas =
-        static_cast<SkiaSurface*>(m_renderTarget.fbSurface.get())->skSurface()->getCanvas();
+      SkCanvas* dstCanvas = static_cast<SkiaSurface*>(m_onscreen.get())->skSurface()->getCanvas();
       dstCanvas->save();
       dstCanvas->scale(SkScalar(this->scale()), SkScalar(this->scale()));
-      static_cast<SkiaSurface*>(m_renderTarget.surface.get())
+      static_cast<SkiaSurface*>(m_surface.get())
         ->skSurface()
         ->draw(dstCanvas, 0.0, 0.0, sampling, &paint);
       dstCanvas->restore();
@@ -285,7 +292,7 @@ private:
   // SkiaWindow::resize() call when the window is created (as the
   // window is created, it send a first resize event.)
   bool m_initialized;
-  RenderTarget m_renderTarget;
+  SurfaceRef m_onscreen;
   SurfaceRef m_surface;
   os::ColorSpaceRef m_colorSpace;
 #if SK_SUPPORT_GPU

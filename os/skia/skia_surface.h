@@ -35,9 +35,6 @@ public:
   void createWithBitmap(SkBitmap&& bmp, const os::ColorSpaceRef& cs);
   void destroy();
 
-  void flush() const;
-  void flushAndSubmit() const;
-
   // Surface impl
   int width() const override;
   int height() const override;

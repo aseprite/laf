@@ -36,9 +36,10 @@ public:
 
   void makeCurrent(Window* window) override;
   void swapBuffers(Window* window) override;
-  RenderTarget makeRenderTarget(const gfx::Size& size,
-                                int scale,
-                                const os::ColorSpaceRef& cs) override;
+  os::SurfaceRef makeOnscreenRenderTarget(const gfx::Size& size,
+                                          const os::ColorSpaceRef& cs) override;
+  os::SurfaceRef makeOffscreenRenderTarget(const gfx::Size& size,
+                                           const os::ColorSpaceRef& cs) override;
   void flush() override;
 
   GrDirectContext* grCtx() const { return m_grCtx.get(); }

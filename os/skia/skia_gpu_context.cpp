@@ -101,55 +101,55 @@ void SkiaGpuContext::flush()
   m_grCtx->flushAndSubmit();
 }
 
-RenderTarget SkiaGpuContext::makeRenderTarget(const gfx::Size& size,
-                                              const int scale,
-                                              const os::ColorSpaceRef& cs)
+SurfaceRef SkiaGpuContext::makeOnscreenRenderTarget(const gfx::Size& size,
+                                                    const os::ColorSpaceRef& cs)
 {
-  if (!m_glInterfaces || !m_glInterfaces->fFunctions.fGetIntegerv)
-    return {};
-
-  // Create of a SkSurface (fbSurface) connected to the OpenGL
-  // framebuffer.
-  RenderTarget renderTarget;
-
-  GrGLint buffer;
-  m_glInterfaces->fFunctions.fGetIntegerv(GR_GL_FRAMEBUFFER_BINDING, &buffer);
-
+  GrGLuint buffer = 0; // On-screen canvas has FBO = 0
+  GrGLint samples = 0;
+  GrGLint stencil = 8;
   GrGLFramebufferInfo info;
-  info.fFBOID = (GrGLuint)buffer;
+  info.fFBOID = buffer;
   info.fFormat = GR_GL_RGBA8;
 
-  GrGLint stencil = 0;
+  m_glInterfaces->fFunctions.fGetIntegerv(GR_GL_SAMPLES, &samples);
   m_glInterfaces->fFunctions.fGetIntegerv(GR_GL_STENCIL_BITS, &stencil);
 
-  GrBackendRenderTarget target = GrBackendRenderTargets::MakeGL(size.w, size.h, 0, stencil, info);
+  GrBackendRenderTarget target;
+  target = GrBackendRenderTargets::MakeGL(size.w, size.h, samples, stencil, info);
+  if (!target.isValid())
+    return {};
 
-  renderTarget.fbSurface = os::make_ref<SkiaSurface>(
-    SkSurfaces::WrapBackendRenderTarget(m_grCtx.get(),
-                                        target,
-                                        kBottomLeft_GrSurfaceOrigin,
-                                        kRGBA_8888_SkColorType,
-                                        ((SkiaColorSpace*)cs.get())->skColorSpace(),
-                                        nullptr));
+  auto rt = SkSurfaces::WrapBackendRenderTarget(
+    m_grCtx.get(),
+    target,
+    kBottomLeft_GrSurfaceOrigin,
+    kRGBA_8888_SkColorType,
+    (cs ? ((SkiaColorSpace*)cs.get())->skColorSpace() : nullptr),
+    nullptr);
+  if (!rt)
+    return {};
 
-  if (!renderTarget.fbSurface)
-    return renderTarget;
+  return os::make_ref<SkiaSurface>(rt);
+}
 
-  if (scale == 1 && renderTarget.fbSurface) {
-    renderTarget.surface = renderTarget.fbSurface;
-  }
-  else {
-    SkImageInfo info = SkImageInfo::Make(std::max(1, size.w / scale),
-                                         std::max(1, size.h / scale),
-                                         kN32_SkColorType,
-                                         kOpaque_SkAlphaType,
-                                         ((SkiaColorSpace*)cs.get())->skColorSpace());
+SurfaceRef SkiaGpuContext::makeOffscreenRenderTarget(const gfx::Size& size,
+                                                     const os::ColorSpaceRef& cs)
+{
+  GrGLint samples = 0;
+  m_glInterfaces->fFunctions.fGetIntegerv(GR_GL_SAMPLES, &samples);
 
-    renderTarget.surface = os::make_ref<SkiaSurface>(
-      SkSurfaces::RenderTarget(m_grCtx.get(), skgpu::Budgeted::kNo, info, 0, nullptr));
-  }
+  SkImageInfo info = SkImageInfo::Make(
+    size.w,
+    size.h,
+    kN32_SkColorType,
+    kOpaque_SkAlphaType,
+    (cs ? ((SkiaColorSpace*)cs.get())->skColorSpace() : nullptr));
 
-  return renderTarget;
+  auto rt = SkSurfaces::RenderTarget(m_grCtx.get(), skgpu::Budgeted::kNo, info, samples, nullptr);
+  if (!rt)
+    return {};
+
+  return os::make_ref<SkiaSurface>(rt);
 }
 
 } // namespace os
