@@ -14,6 +14,7 @@
 #include "gfx/color.h"
 #include "gfx/point.h"
 #include "gfx/rect.h"
+#include "gfx/size.h"
 #include "os/color_space.h"
 #include "os/paint.h"
 #include "os/ref.h"
@@ -45,6 +46,7 @@ public:
   virtual ~Surface() {}
   virtual int width() const = 0;
   virtual int height() const = 0;
+  gfx::Size size() const { return gfx::Size(width(), height()); }
   gfx::Rect bounds() const { return gfx::Rect(0, 0, width(), height()); }
   virtual const ColorSpaceRef& colorSpace() const = 0;
   virtual void setColorSpace(const ColorSpaceRef& cs) = 0;
