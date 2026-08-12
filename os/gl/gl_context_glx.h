@@ -28,14 +28,53 @@ public:
   bool makeContext(Window* window, GpuContext* shared) override
   {
     auto sharedGpuContext = (shared ? (GLXContext)shared->nativeHandle() : nullptr);
+    XVisualInfo* vi = nullptr;
 
-    GLint attr[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, 0 };
-    XVisualInfo* vi = glXChooseVisual(m_display, 0, attr);
-    if (!vi)
-      return false;
+#if LAF_DEBUG_GPU
+    auto glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC)glXGetProcAddressARB(
+      (const GLubyte*)"glXCreateContextAttribsARB");
 
-    m_glCtx = glXCreateContext(m_display, vi, sharedGpuContext, GL_TRUE);
-    XFree(vi);
+    if (glXCreateContextAttribsARB) {
+      static const int attr[] = { GLX_CONTEXT_MAJOR_VERSION_ARB,
+                                  4,
+                                  GLX_CONTEXT_MINOR_VERSION_ARB,
+                                  2,
+                                  GLX_CONTEXT_FLAGS_ARB,
+                                  GLX_CONTEXT_DEBUG_BIT_ARB |
+                                    GLX_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+                                  GLX_CONTEXT_PROFILE_MASK_ARB,
+                                  GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
+                                  0 };
+      static const int fbConfigAttr[] = {
+        GLX_RENDER_TYPE, GLX_RGBA_BIT, GLX_DOUBLEBUFFER, True, GLX_STENCIL_SIZE, 8, 0
+      };
+
+      int n = 0;
+      GLXFBConfig* fbConfig =
+        glXChooseFBConfig(m_display, DefaultScreen(m_display), fbConfigAttr, &n);
+      if (n > 0) {
+        vi = glXGetVisualFromFBConfig(m_display, *fbConfig);
+        if (!vi)
+          return false;
+      }
+
+      if (fbConfig) {
+        m_glCtx = glXCreateContextAttribsARB(m_display, *fbConfig, sharedGpuContext, GL_TRUE, attr);
+        XFree(fbConfig);
+      }
+    }
+#endif
+
+    if (!m_glCtx) {
+      GLint attr[] = { GLX_RGBA, GLX_DOUBLEBUFFER, 0 };
+      vi = glXChooseVisual(m_display, 0, attr);
+      if (!vi)
+        return false;
+
+      m_glCtx = glXCreateContext(m_display, vi, sharedGpuContext, GL_TRUE);
+      XFree(vi);
+    }
+
     if (!m_glCtx)
       return false;
 

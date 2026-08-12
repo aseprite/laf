@@ -15,6 +15,18 @@
 
 #include <gl/gl.h>
 
+#define WGL_CONTEXT_DEBUG_BIT_ARB                 0x00000001
+#define WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB    0x00000002
+#define WGL_CONTEXT_MAJOR_VERSION_ARB             0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB             0x2092
+#define WGL_CONTEXT_FLAGS_ARB                     0x2094
+
+#define WGL_CONTEXT_PROFILE_MASK_ARB              0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB          0x00000001
+#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
+
+using PFNWGLCREATECONTEXTATTRIBSARBPROC = HGLRC(WINAPI*)(HDC, HGLRC, const int*);
+
 namespace os {
 
 class GLContextWGL : public GpuContext {
@@ -29,49 +41,52 @@ public:
   {
     HWND hwnd = (HWND)window->nativeHandle();
     HDC hdc = GetDC(hwnd);
+    HGLRC sharedGlrc = (shared ? (HGLRC)shared->nativeHandle() : nullptr);
 
-    PIXELFORMATDESCRIPTOR pfd = {
-      sizeof(PIXELFORMATDESCRIPTOR),
-      1,                     // version number
-      PFD_DRAW_TO_WINDOW |   // support window
-        PFD_SUPPORT_OPENGL | // support OpenGL
-        PFD_DOUBLEBUFFER,    // double buffered
-      PFD_TYPE_RGBA,         // RGBA type
-      24,                    // 24-bit color depth
-      0,
-      0,
-      0,
-      0,
-      0,
-      0, // color bits ignored
-      8, // 8-bit alpha buffer
-      0, // shift bit ignored
-      0, // no accumulation buffer
-      0,
-      0,
-      0,
-      0,              // accum bits ignored
-      0,              // no z-buffer
-      0,              // no stencil buffer
-      0,              // no auxiliary buffer
-      PFD_MAIN_PLANE, // main layer
-      0,              // reserved
-      0,
-      0,
-      0 // layer masks ignored
-    };
+    PIXELFORMATDESCRIPTOR pfd = {};
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 24;
+    pfd.cAlphaBits = 8;
+    pfd.iLayerType = PFD_MAIN_PLANE;
     int pixelFormat = ChoosePixelFormat(hdc, &pfd);
     SetPixelFormat(hdc, pixelFormat, &pfd);
 
-    m_glrc = wglCreateContext(hdc);
+#if LAF_DEBUG_GPU
+    // TODO It doesn't work, it looks like we have to create a temporary HWND
+    HWND desktopHdc = GetDC(desktopHdc);
+    HGLRC dummyRc = wglCreateContext(desktopHdc);
+
+    auto wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress(
+      "wglCreateContextAttribsARB");
+    if (wglCreateContextAttribsARB) {
+      int attribs[] = { WGL_CONTEXT_MAJOR_VERSION_ARB,
+                        4,
+                        WGL_CONTEXT_MINOR_VERSION_ARB,
+                        2,
+                        WGL_CONTEXT_FLAGS_ARB,
+                        WGL_CONTEXT_DEBUG_BIT_ARB | WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB,
+                        WGL_CONTEXT_PROFILE_MASK_ARB,
+                        WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+                        0 };
+      m_glrc = wglCreateContextAttribsARB(hdc, sharedGlrc, attribs);
+    }
+
+    wglDeleteContext(dummyRc);
+    ReleaseDC(desktopHdc);
+#endif
+
+    if (!m_glrc) {
+      m_glrc = wglCreateContext(hdc);
+      if (sharedGlrc)
+        wglShareLists(sharedGlrc, m_glrc);
+    }
+
     if (!m_glrc) {
       ReleaseDC(hwnd, hdc);
       return false;
-    }
-
-    if (shared) {
-      auto sharedGlrc = (HGLRC)shared->nativeHandle();
-      wglShareLists(sharedGlrc, m_glrc);
     }
 
     wglMakeCurrent(hdc, m_glrc);

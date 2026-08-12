@@ -99,8 +99,11 @@ add_library(laf-os ${LAF_OS_SOURCES})
 target_link_libraries(laf-os laf-gfx laf-base)
 if(LAF_WITH_CLIP)
   target_link_libraries(laf-os clip)
-  target_compile_definitions(laf-os PUBLIC
-    LAF_WITH_CLIP)
+  target_compile_definitions(laf-os PUBLIC LAF_WITH_CLIP)
+endif()
+
+if(LAF_DEBUG_GPU)
+  target_compile_definitions(laf-os PUBLIC LAF_DEBUG_GPU)
 endif()
 
 set(LAF_OS_PLATFORM_LIBS ${OPENGL_LIBRARY})
@@ -112,8 +115,7 @@ if(WIN32)
 
   # Support IME to input CJK characters
   IF (LAF_WITH_IME)
-    target_compile_definitions(laf-os PUBLIC
-      LAF_WITH_IME)
+    target_compile_definitions(laf-os PUBLIC LAF_WITH_IME)
     list(APPEND LAF_OS_PLATFORM_LIBS
       imm32)
   endif()
