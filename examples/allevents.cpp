@@ -151,29 +151,39 @@ private:
 
   void scrollAndDrawLog(const int newlines)
   {
+    m_window->makeCurrent();
+
     Surface* surface = m_window->surface();
     const gfx::Rect rc = surface->bounds();
 
     Paint p;
     p.style(Paint::Fill);
-    p.color(gfx::rgba(0, 0, 0, 8));
 
-    // Scroll old lines
-    int i;
-    if (m_textLog.size() >= m_maxlines) {
-      int h = m_lineHeight * newlines;
-      surface->scrollTo(rc, 0, -h);
+    int i = 0;
+    if (!m_window->gpuAcceleration()) {
+      // Scroll old lines (only without GPU)
+      p.color(gfx::rgba(0, 0, 0, 8));
 
-      surface->drawRect(gfx::Rect(rc.x, rc.y, rc.w, rc.h - h), p);
-      p.color(gfx::rgba(0, 0, 0));
-      surface->drawRect(gfx::Rect(rc.x, rc.y + rc.h - h, rc.w, h), p);
+      if (m_textLog.size() >= m_maxlines) {
+        int h = m_lineHeight * newlines;
+        surface->scrollTo(rc, 0, -h);
 
-      i = (m_textLog.size() - newlines);
+        surface->drawRect(gfx::Rect(rc.x, rc.y, rc.w, rc.h - h), p);
+        p.color(gfx::rgba(0, 0, 0));
+        surface->drawRect(gfx::Rect(rc.x, rc.y + rc.h - h, rc.w, h), p);
+
+        i = (m_textLog.size() - newlines);
+      }
+      // First lines without scroll
+      else {
+        i = m_oldLogSize;
+        surface->drawRect(gfx::Rect(rc.x, rc.y, rc.w, i * m_lineHeight), p);
+      }
     }
-    // First lines without scroll
     else {
-      i = m_oldLogSize;
-      surface->drawRect(gfx::Rect(rc.x, rc.y, rc.w, i * m_lineHeight), p);
+      // With GPU just delete the whole background and draw all text again
+      p.color(gfx::rgba(0, 0, 0));
+      surface->drawRect(rc, p);
     }
 
     Paint paint;
@@ -189,8 +199,10 @@ private:
     surface->drawCircle(m_mousePos.x, m_mousePos.y, m_brushSize, paint);
 
     // Invalidates the whole window to show it on the screen.
-    if (m_window->isVisible())
+    if (m_window->isVisible()) {
       m_window->invalidateRegion(gfx::Region(rc));
+      m_window->swapBuffers();
+    }
     else
       m_window->setVisible(true);
   }
