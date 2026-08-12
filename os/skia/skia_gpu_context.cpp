@@ -93,13 +93,12 @@ void SkiaGpuContext::makeCurrent(Window* window)
 
 void SkiaGpuContext::swapBuffers(Window* window)
 {
-  m_grCtx->flushAndSubmit();
   m_subCtx->swapBuffers(window);
 }
 
 void SkiaGpuContext::flush()
 {
-  m_glInterfaces->fFunctions.fFlush();
+  m_grCtx->flushAndSubmit();
 }
 
 RenderTarget SkiaGpuContext::makeRenderTarget(const gfx::Size& size,
