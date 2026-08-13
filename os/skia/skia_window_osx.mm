@@ -121,9 +121,8 @@ void SkiaWindowOSX::onDrawRect(const gfx::Rect& rect)
     case Backend::NONE: paintGC(rect); break;
 
 #if SK_SUPPORT_GPU
-
     case Backend::GL: {
-      auto gpuCtx = System::instance()->gpuContext();
+      auto* gpuCtx = gpuContext();
       if (gpuCtx && gpuCtx->isValid())
         gpuCtx->makeCurrent(this);
       break;

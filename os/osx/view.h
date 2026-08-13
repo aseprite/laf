@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2018-2021  Igara Studio S.A.
+// Copyright (C) 2018-present  Igara Studio S.A.
 // Copyright (C) 2015-2016  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -39,6 +39,8 @@ class WindowOSX;
 - (void)viewDidUnhide;
 - (void)viewDidMoveToWindow;
 - (void)drawRect:(NSRect)dirtyRect;
+- (BOOL)wantsUpdateLayer;
+- (void)updateLayer;
 - (void)keyDown:(NSEvent*)event;
 - (void)keyUp:(NSEvent*)event;
 - (void)flagsChanged:(NSEvent*)event;

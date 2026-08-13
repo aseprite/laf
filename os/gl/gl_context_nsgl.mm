@@ -68,9 +68,11 @@ bool GLContextNSGL::makeContext(Window* window, GpuContext* shared)
   if (!nsPixelFormat)
     return false;
 
-  // TODO NSOpenGLContext shared
+  NSOpenGLContext* nsShared = nullptr;
+  if (shared)
+    nsShared = (__bridge NSOpenGLContext*)shared->nativeHandle();
 
-  m_nsgl = [[NSOpenGLContext alloc] initWithFormat:nsPixelFormat shareContext:nil];
+  m_nsgl = [[NSOpenGLContext alloc] initWithFormat:nsPixelFormat shareContext:nsShared];
   if (!m_nsgl)
     return false;
 
@@ -86,6 +88,8 @@ bool GLContextNSGL::makeContext(Window* window, GpuContext* shared)
 
 void GLContextNSGL::destroyContext()
 {
+  [NSOpenGLContext clearCurrentContext];
+  [m_nsgl setView:nil];
   m_nsgl = nil;
 }
 

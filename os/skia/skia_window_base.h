@@ -218,6 +218,8 @@ public:
       if (!gpuContext())
         makeGpuContext();
     }
+    else if (gpuContext())
+      destroyGpuContext();
 #endif
 
     m_preferGpuAcceleration = state;

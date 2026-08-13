@@ -252,6 +252,28 @@ using namespace os;
   }
 }
 
+- (BOOL)wantsUpdateLayer
+{
+  if (m_impl) {
+    if (auto* gpuCtx = m_impl->gpuContext(); gpuCtx && gpuCtx->isValid()) {
+      return YES;
+    }
+  }
+  return NO;
+}
+
+- (void)updateLayer
+{
+  if (m_impl) {
+    if (auto* gpuCtx = m_impl->gpuContext(); gpuCtx && gpuCtx->isValid()) {
+      auto* nsgl = (__bridge NSOpenGLContext*)m_impl->gpuContext()->nativeHandle();
+      nsgl.view = self;
+      [nsgl update];
+      return;
+    }
+  }
+}
+
 - (void)keyDown:(NSEvent*)event
 {
   g_keyEquivalentUsed = false;
