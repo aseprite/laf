@@ -30,8 +30,6 @@ bool is_file(const std::string& path);
 bool is_directory(const std::string& path);
 bool is_absolute_path(const std::string& path);
 
-size_t file_size(const std::string& path);
-
 void move_file(const std::string& src, const std::string& dst, bool overwrite = false);
 void copy_file(const std::string& src, const std::string& dst, bool overwrite);
 void delete_file(const std::string& path);

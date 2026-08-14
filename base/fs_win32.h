@@ -36,12 +36,6 @@ bool is_directory(const std::string& path)
           ((attr & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY));
 }
 
-size_t file_size(const std::string& path)
-{
-  struct _stat sts;
-  return (_wstat(from_utf8(path).c_str(), &sts) == 0) ? sts.st_size : 0;
-}
-
 void move_file(const std::string& src, const std::string& dst, bool overwrite)
 {
   DWORD flags = (overwrite ? MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED : 0);

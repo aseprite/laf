@@ -1,5 +1,5 @@
 # LAF Base Library
-# Copyright (c) 2019-2024 Igara Studio S.A.
+# Copyright (c) 2019-present Igara Studio S.A.
 # Copyright (c) 2001-2018 David Capello
 
 include(CheckIncludeFiles)
@@ -35,6 +35,7 @@ set(BASE_SOURCES
   exception.cpp
   file_content.cpp
   file_handle.cpp
+  file_size.cpp
   fs.cpp
   launcher.cpp
   log.cpp

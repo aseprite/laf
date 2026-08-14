@@ -57,12 +57,6 @@ void make_directory(const std::string& path)
   }
 }
 
-size_t file_size(const std::string& path)
-{
-  struct stat sts;
-  return (stat(path.c_str(), &sts) == 0) ? sts.st_size : 0;
-}
-
 void move_file(const std::string& src, const std::string& dst, bool overwrite)
 {
   // Just in case, avoid to overwrite 'dst' if overwrite == false
