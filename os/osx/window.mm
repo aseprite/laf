@@ -298,8 +298,12 @@ void WindowOSX::destroyWindow()
   @autoreleasepool {
     [m_nsWindow removeImpl];
 
-    // Select other window
-    {
+    // Select other window only if this window is the current key window,
+    // otherwise we'd deactivate the actual key window and generate a
+    // spurious windowDidResignKey: on it.
+    // For example: after an undo, when the tip window is destroyed (which isn't the key window)
+    // the main window would lose its focus (issue aseprite/aseprite#5974).
+    if ([m_nsWindow isKeyWindow]) {
       auto app = [NSApplication sharedApplication];
       auto index = [app.windows indexOfObject:m_nsWindow];
       if (index + 1 < app.windows.count) {
