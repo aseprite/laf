@@ -30,7 +30,7 @@ Hit hit_test(Window* window, const gfx::Point& pos)
   if (window->isFullscreen())
     return Hit::Content;
 
-  gfx::Rect rc = window->bounds();
+  gfx::Rect rc = window->bounds() / window->scale();
   gfx::Rect rc2 = rc;
   rc2.shrink(kResizeBorder);
 
@@ -125,7 +125,7 @@ void draw_window(Window* window, const FontRef& font, const Hit hit)
     rc2.y += kTitleBarSize / 2 - 10;
 
     p.color(kTitleBarText);
-    draw_text(surface, font, "Custom Window", rc2.center(), &p, TextAlign::Center);
+    draw_text(surface, font, window->title(), rc2.center(), &p, TextAlign::Center);
 
     // Draw buttons
     draw_button(surface, rc.x2() - kButtonSize, Hit::CloseButton, hit);
