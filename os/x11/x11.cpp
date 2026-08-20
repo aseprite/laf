@@ -1,5 +1,5 @@
 // LAF OS Library
-// Copyright (C) 2021-2022  Igara Studio S.A.
+// Copyright (C) 2021-present  Igara Studio S.A.
 // Copyright (C) 2016  David Capello
 //
 // This file is released under the terms of the MIT license.
@@ -12,6 +12,7 @@
 #include "os/x11/x11.h"
 
 #include "base/debug.h"
+#include "base/log.h"
 #include "os/x11/event_queue.h"
 #include "os/x11/window.h"
 #include "os/x11/xinput.h"
@@ -19,6 +20,18 @@
 namespace os {
 
 X11* X11::m_instance = nullptr;
+
+static int x11_error_handler(Display* display, XErrorEvent* ev)
+{
+  char buf[256];
+  XGetErrorText(display, ev->error_code, buf, sizeof(buf));
+  LOG(ERROR, "X Error of failed request:  %d - %s \n", ev->error_code, buf);
+  LOG(ERROR, "  Major opcode of failed request:  %d\n", ev->request_code);
+  if (ev->minor_code)
+    LOG(ERROR, "  Minor opcode of failed request:  %d\n", ev->minor_code);
+  LOG(ERROR, "  Serial number of failed request:  %d\n", ev->serial);
+  return 0;
+}
 
 // static
 X11* X11::instance()
@@ -37,6 +50,9 @@ X11::X11()
   // it might be necessary?
   // https://github.com/aseprite/aseprite/issues/1962
   XInitThreads();
+
+  // Don't call exit(1) in case of error
+  XSetErrorHandler(x11_error_handler);
 
   m_display = XOpenDisplay(nullptr);
   m_xim = XOpenIM(m_display, nullptr, nullptr, nullptr);
