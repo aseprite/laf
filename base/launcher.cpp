@@ -14,7 +14,15 @@
 #include "base/launcher.h"
 #include "base/string.h"
 
+#include <cctype>
 #include <cstdlib>
+#include <cstring>
+
+#if !LAF_WINDOWS && defined(HAVE_SYSTEM)
+  #include <sys/types.h>
+  #include <sys/wait.h>
+  #include <unistd.h>
+#endif
 
 #if LAF_WINDOWS
   #include <windows.h>
@@ -63,13 +71,68 @@ static int win32_shell_execute(const wchar_t* verb, const wchar_t* file, const w
 
 namespace base { namespace launcher {
 
+namespace {
+
+bool starts_with_ci(const std::string& s, const char* prefix)
+{
+  const std::size_t n = std::strlen(prefix);
+  if (s.size() < n)
+    return false;
+  for (std::size_t i = 0; i < n; ++i) {
+    if (std::tolower(static_cast<unsigned char>(s[i])) !=
+        std::tolower(static_cast<unsigned char>(prefix[i])))
+      return false;
+  }
+  return true;
+}
+
+bool is_allowed_url(const std::string& url)
+{
+  if (url.empty())
+    return false;
+  for (unsigned char c : url) {
+    if (c < 32 || c == '"' || c == '`' || c == '\\')
+      return false;
+  }
+  return starts_with_ci(url, "https://") || starts_with_ci(url, "http://") ||
+         starts_with_ci(url, "mailto:");
+}
+
+#if !LAF_WINDOWS && defined(HAVE_SYSTEM)
+bool spawn_open(const char* tool, const char* arg1, const char* arg2 = nullptr)
+{
+  const pid_t pid = fork();
+  if (pid < 0)
+    return false;
+  if (pid == 0) {
+    setsid();
+    if (arg2)
+      execlp(tool, tool, arg1, arg2, static_cast<char*>(nullptr));
+    else
+      execlp(tool, tool, arg1, static_cast<char*>(nullptr));
+    _exit(127);
+  }
+  int status = 0;
+  if (waitpid(pid, &status, 0) < 0)
+    return false;
+  return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+#endif
+
+} // namespace
+
 bool open_url(const std::string& url)
 {
+  if (!is_allowed_url(url))
+    return false;
   return open_file(url);
 }
 
 bool open_file(const std::string& file)
 {
+  if (file.empty() || file.find('\0') != std::string::npos)
+    return false;
+
   int ret = -1;
 
 #if LAF_WINDOWS
@@ -79,9 +142,9 @@ bool open_file(const std::string& file)
 #elif HAVE_SYSTEM
 
   #if __APPLE__
-  ret = std::system(("open \"" + file + "\"").c_str());
+  ret = spawn_open("open", file.c_str()) ? 0 : -1;
   #else
-  ret = std::system(("setsid xdg-open \"" + file + "\"").c_str());
+  ret = spawn_open("xdg-open", file.c_str()) ? 0 : -1;
   #endif
 
 #endif
@@ -109,22 +172,21 @@ bool open_folder(const std::string& _file)
 
 #elif HAVE_SYSTEM
 
+  if (file.empty() || file.find('\0') != std::string::npos)
+    return false;
+
   #if __APPLE__
 
-  int ret;
   if (base::is_directory(file))
-    ret = std::system(("open \"" + file + "\"").c_str());
-  else
-    ret = std::system(("open --reveal \"" + file + "\"").c_str());
-  return (ret == 0);
+    return spawn_open("open", file.c_str());
+  return spawn_open("open", "--reveal", file.c_str());
 
   #else
 
   if (!base::is_directory(file))
     file = base::get_file_path(file);
 
-  const int ret = std::system(("setsid xdg-open \"" + file + "\"").c_str());
-  return (ret == 0);
+  return spawn_open("xdg-open", file.c_str());
 
   #endif
 
