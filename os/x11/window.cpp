@@ -92,6 +92,7 @@ Atom _NET_WM_STATE = 0;
 Atom _NET_WM_STATE_MAXIMIZED_VERT;
 Atom _NET_WM_STATE_MAXIMIZED_HORZ;
 Atom _NET_WM_ALLOWED_ACTIONS = 0;
+Atom _NET_WM_STATE_HIDDEN = 0;
 
 // Atoms used for the XDND protocol
 Atom XdndAware = 0;
@@ -275,6 +276,7 @@ WindowX11::WindowX11(::Display* display, const WindowSpec& spec)
     _NET_WM_STATE = XInternAtom(m_display, "_NET_WM_STATE", False);
     _NET_WM_STATE_MAXIMIZED_VERT = XInternAtom(m_display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
     _NET_WM_STATE_MAXIMIZED_HORZ = XInternAtom(m_display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
+    _NET_WM_STATE_HIDDEN = XInternAtom(m_display, "_NET_WM_STATE_HIDDEN", False);
   }
   if (!_NET_WM_ALLOWED_ACTIONS)
     _NET_WM_ALLOWED_ACTIONS = XInternAtom(m_display, "_NET_WM_ALLOWED_ACTIONS", False);
@@ -629,7 +631,36 @@ bool WindowX11::isMaximized() const
 
 bool WindowX11::isMinimized() const
 {
-  return false;
+  bool result = false;
+  Atom actual_type;
+  int actual_format;
+  unsigned long nitems;
+  unsigned long bytes_after;
+  Atom* prop = nullptr;
+  const int res = XGetWindowProperty(m_display,
+                                     m_window,
+                                     _NET_WM_STATE,
+                                     // TODO is 256 enough?
+                                     0,
+                                     256,
+                                     False,
+                                     XA_ATOM,
+                                     &actual_type,
+                                     &actual_format,
+                                     &nitems,
+                                     &bytes_after,
+                                     (unsigned char**)&prop);
+
+  if (res == Success) {
+    for (int i = 0; i < nitems; ++i) {
+      if (prop[i] == _NET_WM_STATE_HIDDEN) {
+        result = true;
+        break;
+      }
+    }
+    XFree(prop);
+  }
+  return result;
 }
 
 bool WindowX11::isTransparent() const
