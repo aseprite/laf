@@ -18,6 +18,8 @@ int app_main(int argc, char* argv[])
   ScreenList screens;
   system->listScreens(screens);
 
+  bool unused_var;
+
   int i = 0;
   std::printf("Screens (%ld):\n", screens.size());
   for (auto screen : screens) {
@@ -35,5 +37,10 @@ int app_main(int argc, char* argv[])
                 wa.w,
                 wa.h);
   }
+
+  // crash?
+  char* ptr = nullptr;
+  *ptr = 1;
+
   return 0;
 }
