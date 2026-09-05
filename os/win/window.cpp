@@ -1435,9 +1435,11 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
       if (ABS(z) >= WHEEL_DELTA)
         z /= WHEEL_DELTA;
       else {
-        // TODO use floating point numbers or something similar
-        //      (so we could use: z /= double(WHEEL_DELTA))
-        z = SGN(z);
+        ev.setPreciseWheel(true);
+        const int sign = SGN(z);
+        z /= (WHEEL_DELTA / 10);
+        if (z == 0)
+          z = sign;
       }
 
       gfx::Point delta((msg == WM_MOUSEHWHEEL ? z : 0), (msg == WM_MOUSEWHEEL ? -z : 0));
