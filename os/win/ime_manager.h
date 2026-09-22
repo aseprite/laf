@@ -18,15 +18,28 @@ public:
   IMEManagerWin();
   bool textInput() const { return m_textInput; }
   void setTextInput(bool state) { m_textInput = state; }
-  void setScreenCaretPos(const gfx::Point& pos) { m_screenCaretPos = pos; }
+  bool composing() const { return m_composing; }
 
-  void onStartComposition(HWND hwnd) const;
+  // Store caret in screen coordinates and cache client-relative position.
+  void setCaretScreenPos(HWND hwnd, const gfx::Point& screenPos);
+
+  // Re-apply Imm position using cached client caret.
+  // When dragWindowRect is set (from WM_MOVING's lParam), compensate for
+  // HWND lagging behind the drag rectangle so the IME tracks the preview.
+  void updateImePosition(HWND hwnd, const RECT* dragWindowRect = nullptr) const;
+
+  void onStartComposition(HWND hwnd);
+  void onEndComposition();
 
   static IMEManagerWin* instance();
 
 private:
+  void cacheClientCaretPos(HWND hwnd);
+
   gfx::Point m_screenCaretPos;
+  gfx::Point m_clientCaretPos;
   bool m_textInput;
+  bool m_composing;
 };
 
 } // namespace os

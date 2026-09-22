@@ -848,7 +848,11 @@ void WindowWin::setTextInput(bool state, const gfx::Point& screenCaretPos)
 #if LAF_WITH_IME
   auto imeManager = os::IMEManagerWin::instance();
   imeManager->setTextInput(state);
-  imeManager->setScreenCaretPos(screenCaretPos);
+  if (m_textInput) {
+    imeManager->setCaretScreenPos(m_hwnd, screenCaretPos);
+    if (imeManager->composing())
+      imeManager->updateImePosition(m_hwnd);
+  }
 #endif
 
   if (!state) {
@@ -1130,7 +1134,27 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
       }
       break;
 
-    case WM_MOVING: notifyMoving(); break;
+    case WM_MOVING: {
+      notifyMoving();
+#if LAF_WITH_IME
+      auto imeManager = os::IMEManagerWin::instance();
+      if (imeManager->textInput() && imeManager->composing()) {
+        imeManager->updateImePosition(m_hwnd, reinterpret_cast<RECT*>(lparam));
+      }
+#endif
+      break;
+    }
+
+    case WM_MOVE: {
+#if LAF_WITH_IME
+      // Update the IME position when the window is moved.
+      auto imeManager = os::IMEManagerWin::instance();
+      if (imeManager->textInput() && imeManager->composing()) {
+        imeManager->updateImePosition(m_hwnd);
+      }
+#endif
+      break;
+    }
 
     case WM_SIZING: {
       RECT* rect = reinterpret_cast<RECT*>(lparam);
@@ -1786,6 +1810,11 @@ LRESULT WindowWin::wndProc(UINT msg, WPARAM wparam, LPARAM lparam)
     case WM_IME_STARTCOMPOSITION: {
       auto imeManager = os::IMEManagerWin::instance();
       imeManager->onStartComposition(m_hwnd);
+      break;
+    }
+    case WM_IME_ENDCOMPOSITION: {
+      auto imeManager = os::IMEManagerWin::instance();
+      imeManager->onEndComposition();
       break;
     }
 #endif
