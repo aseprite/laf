@@ -67,6 +67,11 @@ LogLevel base::get_log_level()
   return log_level;
 }
 
+const std::string& base::get_log_filename()
+{
+  return log_filename;
+}
+
 static void LOGva(const char* format, va_list ap)
 {
   va_list apTmp;

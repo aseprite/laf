@@ -35,6 +35,7 @@ namespace base {
 void set_log_filename(const char* filename);
 void set_log_level(LogLevel level);
 LogLevel get_log_level();
+const std::string& get_log_filename();
 
 } // namespace base
 
