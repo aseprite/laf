@@ -51,6 +51,7 @@ public:
   WindowRef makeWindow(const WindowSpec& spec) override;
   SurfaceRef makeSurface(int width, int height, const os::ColorSpaceRef& colorSpace) override;
   SurfaceRef makeRgbaSurface(int width, int height, const os::ColorSpaceRef& colorSpace) override;
+  SurfaceRef makeSubsetSurface(const SurfaceRef& orig, const gfx::Rect& bounds) override;
 
   SurfaceRef loadSurface(const char* filename) override
   {
