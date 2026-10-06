@@ -48,7 +48,7 @@ static bool exhaust_file(FILE* file)
   while (fread(buf, sizeof(buf), 1, file) == sizeof(buf))
     ;
 
-  return feof(file) && !ferror(file);
+  return feof(file) != 0 && ferror(file) == 0;
 }
 
 // Uses zenity or kdialog to display the native file dialog.
