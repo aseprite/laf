@@ -42,6 +42,16 @@ static std::string quote_for_shell(const std::string& in)
   return out;
 }
 
+static bool exhaust_and_close_file(FILE* file)
+{
+  char buf[512];
+  while (fread(buf, 1, sizeof(buf), file) == sizeof(buf))
+    ;
+
+  bool ok = feof(file) != 0 && ferror(file) == 0;
+  return pclose(file) == 0 && ok;
+}
+
 // Uses zenity or kdialog to display the native file dialog.
 class FileDialogX11 : public FileDialog {
 public:
@@ -201,12 +211,12 @@ public:
   {
     if (s_cliTool == CLITool::Unknown) {
       FILE* f = popen("zenity --version", "r");
-      if (f && pclose(f) == 0) {
+      if (f && exhaust_and_close_file(f)) {
         s_cliTool = CLITool::Zenity;
       }
       else {
         f = popen("kdialog --version", "r");
-        if (f && pclose(f) == 0)
+        if (f && exhaust_and_close_file(f))
           s_cliTool = CLITool::KDialog;
         else
           s_cliTool = CLITool::NotFound;
