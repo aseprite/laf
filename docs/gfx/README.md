@@ -1,7 +1,7 @@
 # laf-gfx
 
-*laf-gfx* provides some common structures to handle graphics (in UI
-level or at the logic
+*laf-gfx* provides some common structures to handle graphics, both at
+the UI and logic levels.
 
 ## API Reference
 

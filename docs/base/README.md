@@ -1,8 +1,8 @@
 # laf-base
 
 Cross-platform core functionality to do basic tasks. Ideally this
-functionaly should be included on C++, so some functions could be
-replaced with a `std::` equivalent in the future.
+functionality would be included in the C++ standard library, so some
+functions may be replaced with a `std::` equivalent in the future.
 
 * Data utilities ([encode/decode_base64](https://github.com/aseprite/laf/blob/main/base/base64.h))
 * File system & filename/path utilities ([fs.h](https://github.com/aseprite/laf/blob/main/base/fs.h))
