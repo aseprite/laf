@@ -1,8 +1,8 @@
 # laf-ft
 
-*laf-ft* is a wrapper of FreeType and HarfBuzz to shape Unicode text
+*laf-ft* is a FreeType and HarfBuzz wrapper for shaping Unicode text
 correctly. This library might be replaced with an alternative way to
-handle text on *laf-os*, mainly integrating Skia, the native APIs to
+handle text on *laf-os* by integrating Skia, the native APIs to
 paint text, and a way to create/use sprite sheet-based fonts.
 
 ## API Reference
