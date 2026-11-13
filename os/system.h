@@ -172,6 +172,7 @@ public:
   virtual Ref<Surface> makeRgbaSurface(int width,
                                        int height,
                                        const os::ColorSpaceRef& colorSpace = nullptr) = 0;
+  virtual Ref<Surface> makeSubsetSurface(const Ref<Surface>& source, const gfx::Rect& bounds) = 0;
   virtual Ref<Surface> loadSurface(const char* filename) = 0;
   virtual Ref<Surface> loadRgbaSurface(const char* filename) = 0;
 

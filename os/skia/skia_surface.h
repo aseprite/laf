@@ -104,11 +104,7 @@ public:
 
   bool isValid() const { return !m_bitmap.isNull(); }
 
-  SkBitmap& bitmap()
-  {
-    ASSERT(!m_bitmap.isNull());
-    return m_bitmap;
-  }
+  SkBitmap& bitmap() { return m_bitmap; }
   SkCanvas& canvas() { return *m_canvas; }
   sk_sp<SkSurface>& skSurface() { return m_surface; }
 

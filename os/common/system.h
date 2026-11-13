@@ -51,6 +51,7 @@ public:
   Ref<Surface> makeSurface(const clip::image& image) override;
 #endif
   Ref<Surface> makeRgbaSurface(int, int, const os::ColorSpaceRef&) override { return nullptr; }
+  Ref<Surface> makeSubsetSurface(const Ref<Surface>&, const gfx::Rect&) override { return nullptr; }
   Ref<Surface> loadSurface(const char*) override { return nullptr; }
   Ref<Surface> loadRgbaSurface(const char*) override { return nullptr; }
   Ref<Cursor> makeCursor(const Surface*, const gfx::Point&, int) override { return nullptr; }

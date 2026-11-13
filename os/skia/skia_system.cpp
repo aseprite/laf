@@ -86,6 +86,15 @@ SurfaceRef SkiaSystem::makeRgbaSurface(int width, int height, const os::ColorSpa
   return sur;
 }
 
+Ref<Surface> SkiaSystem::makeSubsetSurface(const Ref<Surface>& orig, const gfx::Rect& bounds)
+{
+  auto sur = make_ref<SkiaSurface>();
+  auto* skSurface = static_cast<SkiaSurface*>(orig.get());
+  skSurface->bitmap().extractSubset(&sur->bitmap(),
+                                    SkIRect::MakeXYWH(bounds.x, bounds.y, bounds.w, bounds.h));
+  return sur;
+}
+
 void SkiaSystem::setTextInput(bool state, const gfx::Point& screenCaretPos)
 {
   if (m_defaultWindow)
